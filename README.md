@@ -1,6 +1,6 @@
-# Rail Trail Bake House
+# Rail Trail Bakehouse
 
-Website for Rail Trail Bake House. Plain HTML + CSS — no build step.
+Website for Rail Trail Bakehouse. Plain HTML + CSS — no build step.
 
 ## Files
 
