@@ -4,13 +4,12 @@ Website for Rail Trail Bake House. Plain HTML + CSS — no build step.
 
 ## Files
 
-- `index.html` — the homepage (menu, about, hours, contact)
+- `index.html` — the homepage (just the bakery name for now)
 - `styles.css` — all styling
 - `404.html` — not-found page
 - `favicon.svg` — site icon
 - `vercel.json` — Vercel settings (clean URLs)
 
-Search `index.html` for `TODO` to find placeholder content (menu, hours, address, contact).
 
 ## Deploying on Vercel
 
