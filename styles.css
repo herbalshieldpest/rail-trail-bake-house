@@ -40,7 +40,9 @@ a { color: inherit; }
 
 /* Hero */
 .hero { position: relative; background: var(--oat); overflow: hidden; }
-.hero-inner { padding: 96px 0 120px; max-width: 720px; }
+.hero { min-height: calc(100vh - 61px); min-height: calc(100svh - 61px); display: grid; place-items: center; }
+.hero-inner { text-align: center; padding: 48px 0; }
+.hero h1 { margin: 0; font-size: clamp(2.6rem, 9vw, 6rem); }
 .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: .8rem; font-weight: 600; color: var(--trail); margin: 0 0 12px; }
 h1, h2, h3 { font-family: var(--serif); line-height: 1.15; margin: 0 0 .5em; }
 h1 { font-size: clamp(2.4rem, 6vw, 4rem); color: var(--crust-dark); }
@@ -93,6 +95,5 @@ h3 { font-size: 1.25rem; }
 @media (max-width: 720px) {
   .nav { display: none; }
   .two-col { grid-template-columns: 1fr; gap: 24px; }
-  .hero-inner { padding: 64px 0 96px; }
   .section { padding: 56px 0; }
 }
