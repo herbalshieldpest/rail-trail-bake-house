@@ -20,13 +20,14 @@ Built in the `rail-trail-bake-house` Supabase project. The SQL is saved in the r
 
 Seeded with the five current menu items and prices, the candied nut gift (price still needed), and the first week: menu up Wednesday, October 28, orders close Sunday, November 1 at 6 pm, and delivery Tuesday, November 3.
 
-## 3. Menu page and basket
+## 3. Menu page and basket — done
 
-- Full weekly menu grouped by breads, rolls, cookies, pies, gifts and the weekly wild card
-- Add to basket, change quantities, and a basket drawer that works well on phones
-- $40 minimum enforced, with a "you're $X away" note
-- Countdown to Sunday 6 pm. After the cutoff, ordering closes and the page shows "Next menu Wednesday"
-- No batch limits for now; sold-out handling is built in if limits are ever needed
+- New page at `/menu`: this week's bakes grouped by breads and rolls, pastry, cookies, pies, the wild card and gifts, with the featured bake marked
+- Countdown to the Sunday 6 pm cutoff; before the menu opens it says when, and after the cutoff ordering closes
+- Basket drawer on every page: change quantities, remove items, $40 minimum with a "$X more to go" note and progress bar
+- Homepage "+" buttons, the sourdough "Add" button and the header basket all use the same basket, which is kept in the browser until checkout
+- Phones get a basket bar along the bottom of the menu page
+- The "Check out" button is in place and becomes real in step 4
 
 ## 4. Checkout and payment (Stripe)
 
