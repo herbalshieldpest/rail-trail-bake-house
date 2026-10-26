@@ -297,7 +297,13 @@
       row.querySelector('.rt-mi-unit').textContent = it.unit;
       row.querySelector('.rt-mi-price').textContent = it.remaining === 0 ? 'Sold out' : money(it.price_cents);
       var old = row.querySelector('.rt-mi-icon');
-      if (old) { var ic = RT.icon(it.icon); ic.setAttribute('class', 'rt-mi-icon'); old.replaceWith(ic); }
+      if (old) {
+        var ic;
+        if (it.image_url) { ic = el('img', { class: 'rt-mi-icon', src: it.image_url, alt: '', loading: 'lazy', style: 'width:100%;height:100%;object-fit:cover;border-radius:50%;display:block' }); }
+        else { ic = RT.icon(it.icon); ic.setAttribute('class', 'rt-mi-icon'); }
+        old.replaceWith(ic);
+        if (it.image_url && ic.parentNode) ic.parentNode.style.overflow = 'hidden';
+      }
       parent.insertBefore(row, after);
     });
   }
