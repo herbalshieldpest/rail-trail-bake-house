@@ -52,11 +52,12 @@ td input,td select{min-width:70px}
 .center{max-width:380px;margin:60px auto}
 .empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
 .hide{display:none!important}
+.show-sm{display:none}@media (max-width:700px){.show-sm{display:block}}
 .order{border-top:1px solid var(--soft);padding:14px 0}
 .order:first-child{border-top:none}
 .price-in{max-width:100px}
 @media (max-width:700px){td,th{padding:6px 4px}.hide-sm{display:none}}
-@media (max-width:600px){nav.tabs{display:grid;grid-template-columns:repeat(3,1fr)}nav.tabs button{padding:10px 4px;font-size:15px}#whoEmail{display:none}header .brand b{font-size:19px}header{padding-top:12px;padding-bottom:12px}}
+@media (max-width:600px){nav.tabs{display:grid;grid-template-columns:repeat(4,1fr)}nav.tabs button{font-size:14px!important}nav.tabs button{padding:10px 4px;font-size:15px}#whoEmail{display:none}header .brand b{font-size:19px}header{padding-top:12px;padding-bottom:12px}}
 @media print{
  body{background:#fff}header,nav.tabs,.no-print,.toast{display:none!important}
  main{border-radius:0;padding:0;max-width:none}
@@ -200,14 +201,14 @@ td input,td select{min-width:70px}
   function product(id) { return state.products.find(function (p) { return p.id === id; }); }
 
   // ---------- layout ----------
-  var TABS = [['week', 'Weekly menu'], ['orders', 'Orders'], ['bake', 'Bake sheet'], ['delivery', 'Delivery sheet'], ['products', 'Products'], ['settings', 'Settings']];
+  var TABS = [['week', 'Weekly menu'], ['orders', 'Orders'], ['bake', 'Bake sheet'], ['delivery', 'Delivery sheet'], ['products', 'Products'], ['team', 'Team'], ['settings', 'Settings']];
   function render() {
     var tabs = h('nav', { class: 'tabs', role: 'tablist' }, TABS.map(function (t) {
       return h('button', { type: 'button', role: 'tab', 'aria-selected': state.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { state.tab = t[0]; render(); } });
     }));
     var body = h('div');
     app.replaceChildren(tabs, body);
-    var fn = { week: viewWeek, orders: viewOrders, bake: viewBake, delivery: viewDelivery, products: viewProducts, settings: viewSettings }[state.tab];
+    var fn = { week: viewWeek, orders: viewOrders, bake: viewBake, delivery: viewDelivery, products: viewProducts, team: viewTeam, settings: viewSettings }[state.tab];
     fn(body);
   }
   function weekPicker(onchange) {
@@ -426,6 +427,85 @@ td input,td select{min-width:70px}
     root.replaceChildren(form); f.name.focus();
   }
   function slugify(s) { return s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 6); }
+
+  // ---------- team ----------
+  function team(action, extra) {
+    return sb.functions.invoke('team', { body: Object.assign({ action: action }, extra || {}) }).then(function (r) {
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') return ctx.json().then(function (j) { throw new Error((j && j.error) || r.error.message); }, function () { throw r.error; });
+        throw r.error;
+      }
+      if (r.data && r.data.error) throw new Error(r.data.error);
+      return r.data;
+    });
+  }
+  function signInNote(d, isReset) {
+    var site = location.origin + '/admin';
+    var who = d.name ? d.name.split(' ')[0] : '';
+    var msg = (who ? 'Hi ' + who + ', ' : 'Hi, ') + (isReset ? 'here’s a new temporary password for the Rail Trail Bakehouse kitchen page.' : 'you’re set up on the Rail Trail Bakehouse kitchen page.') +
+      '\n\nSign in at: ' + site + '\nEmail: ' + d.email + '\nTemporary password: ' + d.password +
+      '\n\nYou’ll choose your own password the first time you sign in.' + (location.hostname.indexOf('vercel.app') >= 0 ? ' The site also asks for the preview password first; I’ll send that separately.' : '');
+    var box = h('textarea', { readonly: true, rows: '9', 'aria-label': 'Message to send', style: 'font-size:15px;margin:8px 0 10px' });
+    box.value = msg;
+    var copy = h('button', { class: 'btn', type: 'button', text: 'Copy message', onclick: function () {
+      (navigator.clipboard ? navigator.clipboard.writeText(msg) : Promise.reject()).then(function () { toast('Copied'); }, function () { box.select(); toast('Select the text and copy it', true); });
+    } });
+    return h('div', { class: 'card', style: 'margin:16px 0;border-color:var(--green)' },
+      h('h2', { text: isReset ? 'New password for ' + (d.name || d.email) : (d.name || d.email) + ' is on the team' }),
+      h('p', { class: 'small', style: 'margin:0', text: 'Send them these sign-in details by text or email. The temporary password is shown only now.' }),
+      box, h('div', { class: 'row' }, copy, h('a', { class: 'btn ghost', href: 'mailto:' + encodeURIComponent(d.email) + '?subject=' + encodeURIComponent('Your Rail Trail kitchen sign-in') + '&body=' + encodeURIComponent(msg), text: 'Open in email' })));
+  }
+  function viewTeam(root) {
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Team' }),
+      h('p', { class: 'muted small', text: 'Everyone here can sign in to the kitchen page and manage menus, orders and settings.' }))));
+    var note = h('div');
+    var list = h('div', { class: 'muted', text: 'Loading…' });
+    var name = h('input', { type: 'text', autocomplete: 'off', placeholder: 'Their name' });
+    var email = h('input', { type: 'email', autocomplete: 'off', placeholder: 'name@example.com', required: true });
+    var err = h('p', { class: 'small', style: 'color:var(--red);margin:0' });
+    var go = h('button', { class: 'btn', type: 'submit', text: 'Invite' });
+    var form = h('form', { class: 'card', style: 'margin-top:22px', onsubmit: function (e) {
+      e.preventDefault(); err.textContent = ''; go.disabled = true;
+      team('invite', { email: email.value, name: name.value }).then(function (d) {
+        go.disabled = false; name.value = ''; email.value = '';
+        note.replaceChildren(signInNote(d, false)); load();
+      }, function (e2) { go.disabled = false; err.textContent = e2.message; });
+    } },
+      h('h2', { text: 'Invite an admin' }),
+      h('div', { class: 'grid2' }, h('label', { class: 'f' }, h('span', { text: 'Name' }), name), h('label', { class: 'f' }, h('span', { text: 'Email' }), email)),
+      err, go);
+    root.appendChild(note); root.appendChild(list); root.appendChild(form);
+
+    function load() {
+      team('list').then(function (d) {
+        list.className = '';
+        list.replaceChildren(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Name' }), h('th', { class: 'hide-sm', text: 'Status' }), h('th', { text: '' }))),
+          h('tbody', {}, d.team.map(function (m) {
+            var actions = h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px' });
+            if (!m.you) {
+              actions.appendChild(h('button', { class: 'btn ghost', type: 'button', text: 'New password', onclick: function (ev) {
+                ev.target.disabled = true;
+                team('reset', { user_id: m.user_id }).then(function (r) { note.replaceChildren(signInNote(r, true)); load(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+                  function (e2) { ev.target.disabled = false; toast(e2.message, true); });
+              } }));
+              var rm = h('button', { class: 'btn ghost', type: 'button', text: 'Remove', onclick: function () {
+                if (rm.dataset.armed) {
+                  rm.disabled = true;
+                  team('remove', { user_id: m.user_id }).then(function () { toast((m.name || m.email) + ' removed'); load(); }, function (e2) { rm.disabled = false; toast(e2.message, true); });
+                } else { rm.dataset.armed = '1'; rm.textContent = 'Confirm remove'; rm.className = 'btn warn'; setTimeout(function () { if (!rm.disabled) { delete rm.dataset.armed; rm.textContent = 'Remove'; rm.className = 'btn ghost'; } }, 4000); }
+              } });
+              actions.appendChild(rm);
+            }
+            var status = m.pending ? 'Invited · hasn’t signed in yet' : (m.last_sign_in_at ? 'Last signed in ' + fmtTs(m.last_sign_in_at) : 'Active');
+            return h('tr', {},
+              h('td', {}, h('div', { text: (m.name || m.email) + (m.you ? ' (you)' : '') }), m.name ? h('div', { class: 'small muted', text: m.email }) : null, h('div', { class: 'small muted show-sm', text: status })),
+              h('td', { class: 'hide-sm small muted', text: status }), h('td', {}, actions));
+          }))));
+      }, function (e2) { list.className = 'empty'; list.textContent = 'Could not load the team: ' + e2.message; });
+    }
+    load();
+  }
 
   // ---------- settings ----------
   function viewSettings(root) {
