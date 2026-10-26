@@ -32,3 +32,6 @@ create policy "admins delete product photos" on storage.objects for delete to au
 
 -- Partial refunds tracking
 alter table public.orders add column refunded_cents integer not null default 0 check (refunded_cents >= 0);
+
+-- Delivery route order set by hand on the delivery sheet
+alter table public.orders add column if not exists route_position integer;

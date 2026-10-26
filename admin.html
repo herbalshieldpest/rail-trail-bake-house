@@ -54,6 +54,17 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
 .center{max-width:380px;margin:60px auto}
 .empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
 .hide{display:none!important}
+.stops{list-style:none;margin:0;padding:0}
+a.btn{text-decoration:none}.stops a{color:var(--ink)}
+.stop{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:start;padding:14px 0;border-top:1px solid var(--soft)}
+.stop-n{width:32px;height:32px;border-radius:50%;background:var(--frame);color:var(--card);display:flex;align-items:center;justify-content:center;font-weight:600}
+.stop.done{opacity:.55}.stop.done .stop-n{background:var(--ok)}
+.stop-addr{display:block;color:var(--ink);margin:2px 0}
+.stop-note{font-size:15px;background:#f6ecd6;border-radius:4px;padding:2px 8px;margin:4px 0;display:inline-block}
+.stop-items{margin:6px 0 0;padding-left:18px;font-size:15px}
+.stop-act{display:flex;gap:6px;align-items:center}.stop-act .btn{padding:8px 12px}
+@media (max-width:600px){.stop{grid-template-columns:auto 1fr}.stop-act{grid-column:1/-1;justify-content:flex-end}}
+@media print{.stop{break-inside:avoid}.stop-n{background:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .ph-prev{aspect-ratio:4/3;max-width:360px;border:1px dashed var(--line);border-radius:8px;background:var(--paper);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-style:italic}
 .ph-prev img{width:100%;height:100%;object-fit:cover;display:block}
 .thumb{flex:none;width:44px;height:44px;border-radius:6px;background:var(--soft);overflow:hidden;display:block}.thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -379,26 +390,78 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
   }
 
   // ---------- delivery sheet ----------
+  function addr(o) { return o.address_line1 + (o.address_line2 ? ' ' + o.address_line2 : '') + ', ' + o.city + ', MD ' + o.zip; }
+  function routeLinks(stops, origin) {
+    var out = [], from = origin, n = 0;
+    for (var k = 0; k < stops.length; k += 9) {
+      var leg = stops.slice(k, k + 9), dest = leg[leg.length - 1];
+      var url = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + encodeURIComponent(from) +
+        '&destination=' + encodeURIComponent(addr(dest)) +
+        (leg.length > 1 ? '&waypoints=' + encodeURIComponent(leg.slice(0, -1).map(addr).join('|')) : '');
+      n++;
+      out.push(h('a', { class: 'btn', href: url, target: '_blank', rel: 'noopener', text: stops.length > 9 ? 'Route part ' + n + ' (stops ' + (k + 1) + '–' + (k + leg.length) + ')' : 'Open route in Google Maps' }));
+      from = addr(dest);
+    }
+    return out;
+  }
   function viewDelivery(root) {
     var w = week();
-    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Delivery sheet' }), w ? h('p', { class: 'muted small', text: fmtDate(w.delivery_date) + ' · ' + (w.delivery_window || '') + ' · grouped by zip' }) : null),
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Delivery sheet' }), w ? h('p', { class: 'muted small', text: fmtDate(w.delivery_date) + ' · ' + (w.delivery_window || '') }) : null),
       h('div', { class: 'row no-print' }, w ? weekPicker(render) : null, h('button', { class: 'btn ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } }))));
     if (!w) return;
-    loadOrders(w).then(function (r) {
-      var orders = (check(r) || []).filter(function (o) { return ['paid', 'baked', 'out_for_delivery'].indexOf(o.status) >= 0; });
-      if (!orders.length) { root.appendChild(h('div', { class: 'empty', text: 'No deliveries yet. Paid orders appear here, grouped by area.' })); return; }
-      orders.sort(function (a, b) { return a.zip.localeCompare(b.zip) || a.address_line1.localeCompare(b.address_line1); });
-      root.appendChild(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: '#' }), h('th', { text: 'Deliver to' }), h('th', { text: 'Items' }), h('th', { class: 'no-print', text: 'Done' }))),
-        h('tbody', {}, orders.map(function (o) {
-          return h('tr', {},
-            h('td', { text: String(o.order_number) }),
-            h('td', {}, h('b', { text: o.delivery_name }), h('div', { text: o.address_line1 + (o.address_line2 ? ', ' + o.address_line2 : '') }), h('div', { class: 'small', text: o.city + ' ' + o.zip }),
-              h('div', { class: 'small muted', text: o.phone || (o.customers && o.customers.phone) || '' }), o.delivery_notes ? h('div', { class: 'small', text: o.delivery_notes }) : null),
-            h('td', { class: 'small' }, (o.order_items || []).map(function (i) { return h('div', { text: i.quantity + ' × ' + i.name }); })),
-            h('td', { class: 'no-print' }, h('button', { class: 'btn ghost', type: 'button', text: 'Delivered', onclick: function () {
-              sb.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', o.id).then(function (r) { check(r); toast('Marked delivered'); render(); });
-            } })));
-        }))));
+    var box = h('div', { class: 'muted', text: 'Loading…' }); root.appendChild(box);
+    Promise.all([loadOrders(w), sb.from('settings').select('origin_label').maybeSingle()]).then(function (rs) {
+      var origin = (rs[1].data && rs[1].data.origin_label) || 'Hereford, MD';
+      var all = (check(rs[0]) || []).filter(function (o) { return ['paid', 'baked', 'out_for_delivery', 'delivered'].indexOf(o.status) >= 0; });
+      box.className = '';
+      if (!all.length) { box.replaceChildren(h('div', { class: 'empty', text: 'No deliveries yet. Paid orders appear here.' })); return; }
+      all.sort(function (a, b) {
+        var pa = a.route_position == null ? 1e6 : a.route_position, pb = b.route_position == null ? 1e6 : b.route_position;
+        return pa - pb || a.zip.localeCompare(b.zip) || a.city.localeCompare(b.city) || a.address_line1.localeCompare(b.address_line1);
+      });
+      function savePositions() {
+        return Promise.all(all.map(function (o, idx) {
+          if (o.route_position === idx) return null;
+          o.route_position = idx;
+          return sb.from('orders').update({ route_position: idx }).eq('id', o.id).then(check);
+        }));
+      }
+      function move(idx, d) {
+        var t = idx + d; if (t < 0 || t >= all.length) return;
+        var x = all[idx]; all[idx] = all[t]; all[t] = x;
+        paint(); savePositions().then(null, function () { toast('Could not save the order of stops', true); });
+      }
+      function paint() {
+        var left = all.filter(function (o) { return o.status !== 'delivered'; });
+        box.replaceChildren(
+          h('div', { class: 'row no-print', style: 'margin-bottom:14px;gap:8px' }, routeLinks(left, origin).concat([
+            h('button', { class: 'btn ghost', type: 'button', text: 'Sort by town', onclick: function () {
+              all.sort(function (a, b) { return a.zip.localeCompare(b.zip) || a.city.localeCompare(b.city) || a.address_line1.localeCompare(b.address_line1); });
+              paint(); savePositions();
+            } })])),
+          h('p', { class: 'small muted no-print', style: 'margin:0 0 12px', text: left.length + ' stop' + (left.length === 1 ? '' : 's') + ' left' + (all.length - left.length ? ' · ' + (all.length - left.length) + ' delivered' : '') + '. Use ↑ ↓ to set your driving order; the route link follows it, starting from ' + origin + '.' }),
+          h('ol', { class: 'stops' }, all.map(function (o, idx) {
+            var done = o.status === 'delivered';
+            var phone = o.phone || (o.customers && o.customers.phone) || '';
+            var digits = phone.replace(/[^\d+]/g, '');
+            return h('li', { class: 'stop' + (done ? ' done' : '') },
+              h('span', { class: 'stop-n', text: String(idx + 1) }),
+              h('div', { class: 'stop-main' },
+                h('div', { class: 'row', style: 'justify-content:space-between;align-items:baseline' }, h('b', { text: o.delivery_name }), h('span', { class: 'small muted', text: '#' + o.order_number })),
+                h('a', { class: 'stop-addr', href: 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(addr(o)), target: '_blank', rel: 'noopener', text: o.address_line1 + (o.address_line2 ? ', ' + o.address_line2 : '') + ', ' + o.city + ' ' + o.zip }),
+                phone ? h('div', { class: 'small' }, h('a', { href: 'tel:' + digits, text: phone }), ' · ', h('a', { href: 'sms:' + digits, text: 'text' })) : null,
+                o.delivery_notes ? h('div', { class: 'stop-note', text: 'Note: ' + o.delivery_notes }) : null,
+                o.gift_message ? h('div', { class: 'stop-note', text: 'Gift card: ' + o.gift_message }) : null,
+                h('ul', { class: 'stop-items' }, (o.order_items || []).map(function (i) { return h('li', { text: i.quantity + ' × ' + i.name }); }))),
+              h('div', { class: 'stop-act no-print' },
+                h('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Move up', text: '↑', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
+                h('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Move down', text: '↓', disabled: idx === all.length - 1, onclick: function () { move(idx, 1); } }),
+                done
+                  ? h('button', { class: 'btn ghost', type: 'button', text: 'Undo', onclick: function () { sb.from('orders').update({ status: 'paid', delivered_at: null }).eq('id', o.id).then(function (r) { check(r); o.status = 'paid'; paint(); }); } })
+                  : h('button', { class: 'btn', type: 'button', text: 'Delivered', onclick: function () { sb.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', o.id).then(function (r) { check(r); o.status = 'delivered'; toast('Stop ' + (idx + 1) + ' delivered'); paint(); }); } })));
+          })));
+      }
+      paint();
     });
   }
 
