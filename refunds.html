@@ -34,8 +34,13 @@ a{color:#2b1f17}a:hover{color:#1e3a30}
 @keyframes rt-sprig{0%{opacity:0;transform:scale(.6) rotate(-6deg)}100%{opacity:1;transform:none}}
 @keyframes rt-fadein{from{opacity:0}to{opacity:1}}
 .rt-seal>svg:not(.rt-sprigs){transform-origin:50% 50%;animation:rt-stamp 1s cubic-bezier(.22,.9,.3,1) .8s both}
-.rt-seal>.rt-sprigs{transform-origin:26.5% 50%;animation:rt-sprig .7s cubic-bezier(.3,1.3,.5,1) 1.5s both}
+@keyframes rt-shoot{0%{opacity:0;transform:scale(.15) rotate(-14deg)}40%{opacity:1}100%{opacity:1;transform:none}}
+.rt-sprigs>*{transform-box:view-box}
+.rt-sprigs>:nth-child(1),.rt-sprigs>:nth-child(2){transform-origin:130px 140px;animation:rt-shoot .65s cubic-bezier(.3,1.25,.5,1) 1.45s both}
+.rt-sprigs>:nth-child(3),.rt-sprigs>:nth-child(4){transform-origin:130px 145px;animation:rt-shoot .65s cubic-bezier(.3,1.25,.5,1) 1.7s both}
+.rt-sprigs>:nth-child(5),.rt-sprigs>:nth-child(6){transform-origin:130px 149px;animation:rt-shoot .65s cubic-bezier(.3,1.25,.5,1) 1.95s both}
 .rt-shadow-clip>div{animation:rt-fadein .5s ease-out 1.25s both}
+.rt-pc{animation:rt-fadein 1s ease-out .1s backwards}
 @keyframes rt-unblur{from{opacity:0;filter:blur(12px)}to{opacity:1;filter:blur(0)}}
 .rt-hl .rt-ribbon,.rt-hl .rt-ribbon-alt{animation:rt-unblur .9s cubic-bezier(.25,.6,.3,1) 0.05s backwards}
 .rt-hl h1{animation:rt-unblur .9s cubic-bezier(.25,.6,.3,1) 0.18s backwards}
@@ -44,7 +49,7 @@ a{color:#2b1f17}a:hover{color:#1e3a30}
 .rt-seal-zone+div>h2{animation:rt-unblur .9s cubic-bezier(.25,.6,.3,1) 0.72s backwards}
 .rt-seal-zone+div>h2+div{animation:rt-unblur .9s cubic-bezier(.25,.6,.3,1) 0.82s backwards}
 .rt-seal-zone+div>.rt-map{animation:rt-unblur .9s cubic-bezier(.25,.6,.3,1) 0.92s backwards}
-@media (prefers-reduced-motion:reduce){.rt-seal>svg,.rt-shadow-clip>div,.rt-hl .rt-ribbon,.rt-hl .rt-ribbon-alt,.rt-hl h1,.rt-hl .rt-clear,.rt-photo-note>p,.rt-seal-zone+div>*{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.rt-sprigs>*,.rt-pc,.rt-seal>svg,.rt-shadow-clip>div,.rt-hl .rt-ribbon,.rt-hl .rt-ribbon-alt,.rt-hl h1,.rt-hl .rt-clear,.rt-photo-note>p,.rt-seal-zone+div>*{animation:none!important}}
 .rt-bag,.rt-burger{display:none}.rt-b-close{display:none}.rt-mob{display:none}.rt-mob-br{display:none}.rt-est{display:none!important}
 @media (max-width:900px){.rt-flo{display:none!important}}
 @media (max-width:900px){.rt-seal{top:40px;bottom:auto;left:auto;right:40px;transform:none;width:126px!important;height:126px!important}.rt-seal-zone{height:0;border:none!important}.rt-shadow-clip{display:none}}
