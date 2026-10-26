@@ -377,6 +377,9 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
           o.gift_message ? h('div', { class: 'small', text: 'Gift message: ' + o.gift_message }) : null,
           h('ul', { class: 'small', style: 'margin:6px 0 0;padding-left:18px' }, (o.order_items || []).map(function (i) { return h('li', { text: i.quantity + ' × ' + i.name + ' — ' + money(i.line_total_cents) }); })),
           h('div', { class: 'small', style: 'margin-top:4px' }, 'Total ' + money(o.subtotal_cents) + (o.refunded_cents ? ' · refunded ' + money(o.refunded_cents) : '')),
+          o.status === 'pending_payment' ? null : h('div', { class: 'small ' + (o.confirmation_error ? '' : 'muted'), style: o.confirmation_error ? 'color:#a3352b' : '',
+            text: o.confirmation_sent_at ? 'Confirmation emailed ' + new Date(o.confirmation_sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+              : o.confirmation_error ? 'Confirmation email failed: ' + o.confirmation_error : 'Confirmation email not sent' }),
           refundBox(o)));
       });
     });

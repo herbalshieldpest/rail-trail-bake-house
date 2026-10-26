@@ -26,3 +26,6 @@ begin
    where wi.week_id = w;
   return null;
 end $$;
+
+-- Order confirmation emails (Resend)
+alter table public.orders add column confirmation_sent_at timestamptz, add column confirmation_error text;

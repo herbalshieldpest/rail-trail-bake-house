@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import Stripe from "npm:stripe@17.4.0";
+import { sendConfirmation } from "../_shared/email.ts";
 
 // Signature checks need no API key; the same endpoint is registered in both Stripe live and test mode.
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY_LIVE") ?? Deno.env.get("STRIPE_SECRET_KEY_TEST") ?? "sk_unused", { httpClient: Stripe.createFetchHttpClient() });
@@ -37,6 +38,8 @@ Deno.serve(async (req) => {
           status: "paid", paid_at: new Date().toISOString(),
           stripe_payment_intent_id: typeof s.payment_intent === "string" ? s.payment_intent : null,
         }).eq("stripe_checkout_session_id", s.id).eq("status", "pending_payment");
+        const { data: o } = await sb.from("orders").select("id,status").eq("stripe_checkout_session_id", s.id).maybeSingle();
+        if (o && o.status === "paid") await sendConfirmation(sb, o.id);
         break;
       }
       case "checkout.session.expired":

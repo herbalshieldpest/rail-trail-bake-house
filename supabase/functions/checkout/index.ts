@@ -6,6 +6,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import Stripe from "npm:stripe@17.4.0";
+import { sendConfirmation } from "../_shared/email.ts";
 
 const ALLOWED_ORIGINS = [
   /^https:\/\/rail-trail-bake-house(-[a-z0-9-]+)?\.vercel\.app$/,
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
       const stripe = stripeFor(sid.startsWith("cs_live_"));
       if (!stripe) return json({ error: "Unknown order." }, 404);
       const { data: o } = await sb.from("orders")
-        .select("order_number,status,subtotal_cents,delivery_name,address_line1,city,zip,week_id,weeks(delivery_date,delivery_window),order_items(name,unit,quantity,line_total_cents)")
+        .select("id,order_number,status,subtotal_cents,delivery_name,address_line1,city,zip,week_id,weeks(delivery_date,delivery_window),order_items(name,unit,quantity,line_total_cents)")
         .eq("stripe_checkout_session_id", sid).maybeSingle();
       if (!o) return json({ error: "Unknown order." }, 404);
       // If the webhook hasn't arrived yet, ask Stripe directly.
@@ -61,9 +62,11 @@ Deno.serve(async (req) => {
           await sb.from("orders").update({ status: "paid", paid_at: new Date().toISOString(), stripe_payment_intent_id: typeof s.payment_intent === "string" ? s.payment_intent : null })
             .eq("stripe_checkout_session_id", sid).eq("status", "pending_payment");
           o.status = "paid";
+          await sendConfirmation(sb, o.id);
         }
       }
-      return json({ order: o });
+      const { id: _id, ...pub } = o;
+      return json({ order: pub });
     }
 
     if (body.action !== "start") return json({ error: "Unknown action." }, 400);
