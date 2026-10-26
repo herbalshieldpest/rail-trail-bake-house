@@ -15,9 +15,9 @@
 body{margin:0;background:var(--frame);color:var(--ink);font-family:'EB Garamond',Georgia,serif;font-size:17px;line-height:1.45}
 button,input,select,textarea{font:inherit;color:inherit}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(16px,3vw,32px);color:var(--card)}
-header .brand{display:flex;align-items:center;gap:16px}header .logo{color:var(--card);display:block}
+header .brand{display:flex;align-items:baseline;gap:16px}header .logo{color:var(--card);display:block}
 header .brand b{font-weight:500;font-size:22px;letter-spacing:.02em}
-header .brand span{font-variant:small-caps;letter-spacing:.12em;color:var(--gilt);font-size:15px;border-left:1px solid rgba(241,235,224,.3);padding-left:16px;line-height:1.6}
+header .brand span{font-variant:small-caps;letter-spacing:.12em;color:var(--gilt);font-size:15px;border-left:1px solid rgba(241,235,224,.3);padding-left:16px;line-height:1.15;position:relative;top:-2.3px}
 header .who{font-size:14px;opacity:.85;display:flex;gap:14px;align-items:center}
 header .who button{background:none;border:1px solid rgba(241,235,224,.4);color:var(--card);border-radius:4px;padding:4px 10px;cursor:pointer}
 main{max-width:1180px;margin:0 auto 40px;background:var(--card);border-radius:10px;min-height:70vh;padding:clamp(18px,3vw,36px)}
@@ -35,10 +35,10 @@ nav.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--g
 .btn.warn{background:var(--red);color:#fff;outline-color:rgba(255,255,255,.5)}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .spread{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
-input[type=text],input[type=email],input[type=password],input[type=number],input[type=datetime-local],select,textarea{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=time],select,textarea{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%}
 textarea{min-height:60px;resize:vertical}
-label.f{display:block;font-size:14px;color:var(--muted);margin-bottom:12px}
-label.f>span{display:block;margin-bottom:4px}
+label.f,div.f{display:block;font-size:14px;color:var(--muted);margin-bottom:12px}
+label.f>span,div.f>span{display:block;margin-bottom:4px}
 table{width:100%;border-collapse:collapse}
 th{text-align:left;font-weight:500;font-variant:small-caps;letter-spacing:.08em;color:var(--muted);font-size:15px;padding:8px 8px;border-bottom:1px solid var(--line)}
 td{padding:8px;border-bottom:1px solid var(--soft);vertical-align:top}
@@ -46,7 +46,9 @@ td input,td select{min-width:70px}
 .pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:13px;font-variant:small-caps;letter-spacing:.08em;border:1px solid currentColor}
 .pill.published{color:var(--ok)}.pill.draft{color:var(--muted)}.pill.archived{color:var(--muted)}
 .card{background:var(--paper);border:1px solid var(--soft);border-radius:8px;padding:16px 18px}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px}
+.dt{display:flex;gap:8px}.dt input{min-width:0;flex:1 1 0;max-width:100%;-webkit-appearance:none;appearance:none;min-height:38px;line-height:1.3}.dt input[type=time]{flex:0 1 9em}
+input,select,textarea{max-width:100%;box-sizing:border-box}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--frame);color:var(--card);padding:10px 18px;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10;font-size:15px}
 .toast.err{background:var(--red)}
 .center{max-width:380px;margin:60px auto}
@@ -59,7 +61,7 @@ td input,td select{min-width:70px}
 @media (max-width:700px){td,th{padding:6px 4px}.hide-sm{display:none}}
 .who .navbtn{display:none;background:none;border:none;padding:0;color:var(--card);width:40px;height:40px;margin-right:-8px;cursor:pointer;align-items:center;justify-content:center}
 .navbtn .x{display:none}body.nav-open .navbtn .x{display:inline}body.nav-open .navbtn .b{display:none}
-@media (max-width:600px){#whoEmail{display:none}header .logo svg{height:30px!important}header .brand{gap:12px}header{padding-top:12px;padding-bottom:12px}.who .navbtn{display:flex}#signOut{display:none}nav.tabs{display:none;flex-direction:column;border-bottom:1px solid var(--line);margin:-6px 0 20px}body.nav-open nav.tabs{display:flex}nav.tabs button{text-align:left;padding:13px 2px;font-size:17px;border-bottom:1px solid var(--soft);border-left:3px solid transparent;padding-left:10px}nav.tabs button[aria-selected=true]{border-bottom-color:var(--soft);border-left-color:var(--green)}nav.tabs .tab-out{display:block;color:var(--red)}}
+@media (max-width:600px){#whoEmail{display:none}header .logo svg{height:30px!important}header .brand span{top:-1.2px}header .brand{gap:12px}header{padding-top:12px;padding-bottom:12px}.who .navbtn{display:flex}#signOut{display:none}nav.tabs{display:none;flex-direction:column;border-bottom:1px solid var(--line);margin:-6px 0 20px}body.nav-open nav.tabs{display:flex}nav.tabs button{text-align:left;padding:13px 2px;font-size:17px;border-bottom:1px solid var(--soft);border-left:3px solid transparent;padding-left:10px}nav.tabs button[aria-selected=true]{border-bottom-color:var(--soft);border-left-color:var(--green)}nav.tabs .tab-out{display:block;color:var(--red)}}
 .tab-out{display:none}.cur-tab{display:none;font-variant:small-caps;letter-spacing:.1em;color:var(--muted);font-size:15px;margin:-4px 0 12px}
 @media print{
  body{background:#fff}header,nav.tabs,.no-print,.toast{display:none!important}
@@ -240,12 +242,16 @@ td input,td select{min-width:70px}
       pubBtn.disabled = true;
       sb.from('weeks').update({ status: published ? 'draft' : 'published' }).eq('id', w.id).then(function (r) { check(r); toast(published ? 'Moved back to draft' : 'Published'); loadAll().then(render); });
     } });
-    var opens = h('input', { type: 'datetime-local', value: toLocalInput(w.opens_at) });
-    var closes = h('input', { type: 'datetime-local', value: toLocalInput(w.closes_at) });
+    function dt(ts, label) {
+      var v = toLocalInput(ts).split('T');
+      var d = h('input', { type: 'date', value: v[0], 'aria-label': label + ' date' }), t = h('input', { type: 'time', value: v[1], 'aria-label': label + ' time' });
+      var box = h('div', { class: 'dt' }, d, t); box.val = function () { return d.value + 'T' + (t.value || '00:00').slice(0, 5); }; return box;
+    }
+    var opens = dt(w.opens_at, 'Menu goes up'), closes = dt(w.closes_at, 'Orders close');
     var note = h('input', { type: 'text', value: w.note || '', placeholder: 'Optional note, e.g. “Thanksgiving week”' });
     var saveTimes = h('button', { class: 'btn ghost', type: 'button', text: 'Save times', onclick: function () {
       saveTimes.disabled = true;
-      sb.from('weeks').update({ opens_at: fromLocalInput(opens.value), closes_at: fromLocalInput(closes.value), note: note.value }).eq('id', w.id)
+      sb.from('weeks').update({ opens_at: fromLocalInput(opens.val()), closes_at: fromLocalInput(closes.val()), note: note.value }).eq('id', w.id)
         .then(function (r) { saveTimes.disabled = false; check(r); toast('Saved'); loadAll().then(render); });
     } });
     root.appendChild(h('div', { class: 'grid2', style: 'margin-bottom:22px' },
@@ -255,8 +261,8 @@ td input,td select{min-width:70px}
         h('p', { class: 'small', style: 'margin:0 0 14px' }, 'Menu goes up ' + fmtTs(w.opens_at) + '. Orders close ' + fmtTs(w.closes_at) + '.'),
         pubBtn),
       h('div', { class: 'card' },
-        h('label', { class: 'f' }, h('span', { text: 'Menu goes up (Eastern time)' }), opens),
-        h('label', { class: 'f' }, h('span', { text: 'Orders close (Eastern time)' }), closes),
+        h('div', { class: 'f' }, h('span', { text: 'Menu goes up (Eastern time)' }), opens),
+        h('div', { class: 'f' }, h('span', { text: 'Orders close (Eastern time)' }), closes),
         h('label', { class: 'f' }, h('span', { text: 'Note' }), note), saveTimes)));
 
     var list = h('div');
