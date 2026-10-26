@@ -28,6 +28,7 @@ Seeded with the five current menu items and prices, the candied nut gift (price 
 - Homepage "+" buttons, the sourdough "Add" button and the header basket all use the same basket, which is kept in the browser until checkout
 - Phones get a basket bar along the bottom of the menu page
 - The "Check out" button is in place and becomes real in step 4
+- Every main-nav item is now its own page with its own title and search description: `/menu` (this week), `/breads`, `/pies`, `/cookies`, `/gifts` and `/delivery` (how it works, towns, map and common questions)
 
 ## 4. Checkout and payment (Stripe)
 
