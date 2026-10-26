@@ -45,8 +45,9 @@ Deno.serve(async (req) => {
       }
       case "charge.refunded": {
         const c = event.data.object as Stripe.Charge;
-        if (c.refunded && typeof c.payment_intent === "string") {
-          await sb.from("orders").update({ status: "refunded" }).eq("stripe_payment_intent_id", c.payment_intent);
+        if (typeof c.payment_intent === "string") {
+          await sb.from("orders").update({ refunded_cents: c.amount_refunded, ...(c.refunded ? { status: "refunded" } : {}) })
+            .eq("stripe_payment_intent_id", c.payment_intent);
         }
         break;
       }

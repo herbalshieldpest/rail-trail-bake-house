@@ -29,3 +29,6 @@ create policy "admins update product photos" on storage.objects for update to au
   using (bucket_id = 'product-photos' and (select public.is_admin()));
 create policy "admins delete product photos" on storage.objects for delete to authenticated
   using (bucket_id = 'product-photos' and (select public.is_admin()));
+
+-- Partial refunds tracking
+alter table public.orders add column refunded_cents integer not null default 0 check (refunded_cents >= 0);

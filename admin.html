@@ -340,8 +340,13 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
       if (!orders.length) { box.appendChild(h('div', { class: 'empty', text: 'No orders for this week yet. They will appear here as customers check out.' })); return; }
       var paid = orders.filter(function (o) { return ['paid', 'baked', 'out_for_delivery', 'delivered'].indexOf(o.status) >= 0; });
       var total = paid.reduce(function (s, o) { return s + o.subtotal_cents; }, 0);
-      box.appendChild(h('p', { text: paid.length + ' paid order' + (paid.length === 1 ? '' : 's') + ' · ' + money(total) }));
-      orders.forEach(function (o) {
+      var total2 = total - paid.reduce(function (s, o) { return s + (o.refunded_cents || 0); }, 0);
+      var unpaid = orders.filter(function (o) { return o.status === 'pending_payment' || o.status === 'cancelled'; });
+      var showAll = !!state.showUnpaid;
+      box.appendChild(h('div', { class: 'row', style: 'justify-content:space-between' },
+        h('p', { style: 'margin:0', text: paid.length + ' paid order' + (paid.length === 1 ? '' : 's') + ' · ' + money(total2) }),
+        unpaid.length ? h('label', { class: 'row small muted' }, h('input', { type: 'checkbox', checked: showAll, onchange: function (e) { state.showUnpaid = e.target.checked; render(); } }), ' Show ' + unpaid.length + ' unfinished checkout' + (unpaid.length === 1 ? '' : 's')) : null));
+      orders.filter(function (o) { return showAll || unpaid.indexOf(o) < 0; }).forEach(function (o) {
         var sel = h('select', { style: 'width:auto', 'aria-label': 'Status', onchange: function () {
           var patch = { status: sel.value }; if (sel.value === 'delivered') patch.delivered_at = new Date().toISOString();
           sb.from('orders').update(patch).eq('id', o.id).then(function (r) { check(r); toast('Order #' + o.order_number + ' → ' + sel.value.replace(/_/g, ' ')); });
@@ -353,7 +358,8 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
           o.delivery_notes ? h('div', { class: 'small', text: 'Note: ' + o.delivery_notes }) : null,
           o.gift_message ? h('div', { class: 'small', text: 'Gift message: ' + o.gift_message }) : null,
           h('ul', { class: 'small', style: 'margin:6px 0 0;padding-left:18px' }, (o.order_items || []).map(function (i) { return h('li', { text: i.quantity + ' × ' + i.name + ' — ' + money(i.line_total_cents) }); })),
-          h('div', { class: 'small', style: 'margin-top:4px' }, 'Total ' + money(o.subtotal_cents))));
+          h('div', { class: 'small', style: 'margin-top:4px' }, 'Total ' + money(o.subtotal_cents) + (o.refunded_cents ? ' · refunded ' + money(o.refunded_cents) : '')),
+          refundBox(o)));
       });
     });
   }
@@ -501,6 +507,38 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
   function slugify(s) { return s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 6); }
 
   // ---------- team ----------
+  function callFn(name, body) {
+    return sb.functions.invoke(name, { body: body }).then(function (r) {
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === 'function') return ctx.json().then(function (j) { throw new Error((j && j.error) || r.error.message); }, function () { throw r.error; });
+        throw r.error;
+      }
+      if (r.data && r.data.error) throw new Error(r.data.error);
+      return r.data;
+    });
+  }
+  function refundBox(o) {
+    var left = o.subtotal_cents - (o.refunded_cents || 0);
+    if (!o.stripe_payment_intent_id || left <= 0 || ['paid', 'baked', 'out_for_delivery', 'delivered'].indexOf(o.status) < 0) return null;
+    var box = h('div', { class: 'row no-print', style: 'margin-top:8px;gap:8px' });
+    var open = h('button', { class: 'btn ghost', type: 'button', text: 'Refund…', onclick: function () {
+      var amt = h('input', { type: 'text', inputmode: 'decimal', value: (left / 100).toFixed(2), 'aria-label': 'Refund amount', style: 'max-width:110px' });
+      var go = h('button', { class: 'btn warn', type: 'button', text: 'Refund to card', onclick: function () {
+        var c = toCents(amt.value);
+        if (isNaN(c) || !c || c > left) { toast('Enter an amount up to ' + money(left), true); return; }
+        if (!go.dataset.armed) { go.dataset.armed = '1'; go.textContent = 'Confirm refund of ' + money(c); return; }
+        go.disabled = true; go.textContent = 'Refunding…';
+        callFn('refund', { order_id: o.id, amount_cents: c }).then(function (r) {
+          toast('Refunded ' + money(c) + ' to the customer’s card'); render();
+        }, function (e) { go.disabled = false; delete go.dataset.armed; go.textContent = 'Refund to card'; toast(e.message, true); });
+      } });
+      box.replaceChildren(h('span', { class: 'small', text: '$' }), amt, go, h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { box.replaceChildren(open); } }));
+      amt.focus(); amt.select();
+    } });
+    box.appendChild(open);
+    return box;
+  }
   function team(action, extra) {
     return sb.functions.invoke('team', { body: Object.assign({ action: action }, extra || {}) }).then(function (r) {
       if (r.error) {

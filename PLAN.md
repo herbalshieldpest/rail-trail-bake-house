@@ -33,7 +33,8 @@ Seeded with the five current menu items and prices, the candied nut gift (price 
 ## 4. Checkout and payment (Stripe) — in test mode
 
 - Done: delivery details form in the basket, zip-code area check, prices rechecked on the server, Stripe Checkout (test mode), webhook marks orders paid/cancelled/refunded, thank-you page at `/thanks`
-- Still to do: refunds button in the kitchen page, confirmation emails (needs an email sender), exact 15-minute drive check (needs a maps account), switch to live keys at launch
+- Refunds: full or partial, from the kitchen page Orders tab
+- Still to do: confirmation emails (needs an email sender), exact 15-minute drive check (needs a maps account), switch to live keys at launch
 
 
 - Stripe Checkout: cards, Apple Pay and Google Pay
