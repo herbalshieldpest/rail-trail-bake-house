@@ -54,6 +54,8 @@ input,select,textarea{max-width:100%;box-sizing:border-box}
 .center{max-width:380px;margin:60px auto}
 .empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
 .hide{display:none!important}
+.testbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#f3d36b;color:#2a1c13;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:15px}.testbar button{background:#2a1c13;color:#f3d36b;border:0;border-radius:4px;padding:6px 12px;font:inherit;cursor:pointer}
+@media print{.testbar{display:none}}
 .stops{list-style:none;margin:0;padding:0}
 a.btn{text-decoration:none}.stops a{color:var(--ink)}
 .stop{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:start;padding:14px 0;border-top:1px solid var(--soft)}
@@ -104,6 +106,10 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
   var sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: false } });
 
   var state = { tab: 'week', weeks: [], weekId: null, products: [] };
+  // Stripe test mode: only on this device. The public site reads the same flag and pays with test keys (server checks you're an admin).
+  var TESTKEY = 'rt-test-mode';
+  function isTest() { try { return localStorage.getItem(TESTKEY) === '1'; } catch (e) { return false; } }
+  function setTest(on) { try { on ? localStorage.setItem(TESTKEY, '1') : localStorage.removeItem(TESTKEY); } catch (e) {} render(); toast(on ? 'Test mode on for this device' : 'Test mode off'); }
 
   // ---------- helpers ----------
   function h(tag, attrs) {
@@ -203,7 +209,7 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
   }
   function setNav(on) { document.body.classList.toggle('nav-open', on); document.getElementById('navBtn').setAttribute('aria-expanded', on ? 'true' : 'false'); }
   document.getElementById('navBtn').addEventListener('click', function () { setNav(!document.body.classList.contains('nav-open')); });
-  document.getElementById('signOut').addEventListener('click', function () { sb.auth.signOut().then(function () { renderSignIn(); }); });
+  document.getElementById('signOut').addEventListener('click', function () { try { localStorage.removeItem(TESTKEY); } catch (e) {} sb.auth.signOut().then(function () { renderSignIn(); }); });
 
   // ---------- data ----------
   function loadAll() {
@@ -230,7 +236,8 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
     }).concat([h('button', { type: 'button', class: 'tab-out', text: 'Sign out', onclick: function () { setNav(false); document.getElementById('signOut').click(); } })]));
     var cur = TABS.find(function (t) { return t[0] === state.tab; });
     var body = h('div');
-    app.replaceChildren(tabs, h('div', { class: 'cur-tab', text: cur ? cur[1] : '' }), body);
+    var bar = isTest() ? h('div', { class: 'testbar' }, h('span', {}, h('b', { text: 'Test mode' }), ' · orders, bake and delivery sheets show test orders only. Pay with card 4242 4242 4242 4242.'), h('button', { type: 'button', text: 'Turn off', onclick: function () { setTest(false); } })) : null;
+    app.replaceChildren.apply(app, [bar, tabs, h('div', { class: 'cur-tab', text: cur ? cur[1] : '' }), body].filter(Boolean));
     var fn = { week: viewWeek, orders: viewOrders, bake: viewBake, delivery: viewDelivery, products: viewProducts, team: viewTeam, settings: viewSettings }[state.tab];
     fn(body);
   }
@@ -338,7 +345,7 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
   // ---------- orders ----------
   var STATUSES = ['pending_payment', 'paid', 'baked', 'out_for_delivery', 'delivered', 'cancelled', 'refunded'];
   function loadOrders(w) {
-    return sb.from('orders').select('*, customers(email,name,phone), order_items(name,unit,quantity,unit_price_cents,line_total_cents)').eq('week_id', w.id).order('order_number');
+    return sb.from('orders').select('*, customers(email,name,phone), order_items(name,unit,quantity,unit_price_cents,line_total_cents)').eq('week_id', w.id).eq('livemode', !isTest()).order('order_number');
   }
   function viewOrders(root) {
     var w = week();
@@ -381,7 +388,7 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
     root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Bake sheet' }), w ? h('p', { class: 'muted small', text: 'Bake ' + (w ? fmtDate(w.bake_date) : '') + ' · paid orders only' }) : null),
       h('div', { class: 'row no-print' }, w ? weekPicker(render) : null, h('button', { class: 'btn ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } }))));
     if (!w) return;
-    sb.from('bake_sheet').select('*').eq('week_id', w.id).order('name').then(function (r) {
+    sb.from('bake_sheet').select('*').eq('week_id', w.id).eq('livemode', !isTest()).order('name').then(function (r) {
       var rows = check(r) || [];
       if (!rows.length) { root.appendChild(h('div', { class: 'empty', text: 'Nothing to bake yet. Totals appear here once orders are paid.' })); return; }
       root.appendChild(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Bake' }), h('th', { text: 'Unit' }), h('th', { text: 'Quantity', style: 'text-align:right' }))),
@@ -696,7 +703,12 @@ a.btn{text-decoration:none}.stops a{color:var(--ink)}
             var c = toCents(min.value); if (isNaN(c) || c == null) { toast('Minimum should be a number', true); return; }
             sb.from('settings').update({ min_order_cents: c, max_drive_minutes: parseInt(drive.value, 10) }).eq('id', true).then(function (r) { check(r); toast('Saved'); });
           } })),
-        zonesCard(zones)));
+        zonesCard(zones),
+        h('div', { class: 'card' }, h('h2', { text: 'Stripe test mode' }),
+          h('p', { class: 'small', text: isTest()
+            ? 'On for this device. Checkouts you start on this device use Stripe test cards, and the kitchen pages show test orders only. Customers are not affected.'
+            : 'Turn on to place practice orders from this device with Stripe test cards. Only this device is affected; customers always pay normally.' }),
+          h('button', { class: isTest() ? 'btn ghost' : 'btn', type: 'button', text: isTest() ? 'Turn test mode off' : 'Turn test mode on', onclick: function () { setTest(!isTest()); } }))));
     });
   }
   function zonesCard(zones) {

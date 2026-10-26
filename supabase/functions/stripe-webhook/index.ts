@@ -3,21 +3,23 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import Stripe from "npm:stripe@17.4.0";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", { httpClient: Stripe.createFetchHttpClient() });
+// Signature checks need no API key; the same endpoint is registered in both Stripe live and test mode.
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY_LIVE") ?? Deno.env.get("STRIPE_SECRET_KEY_TEST") ?? "sk_unused", { httpClient: Stripe.createFetchHttpClient() });
 const crypto = Stripe.createSubtleCryptoProvider();
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Use POST", { status: 405 });
   const sig = req.headers.get("Stripe-Signature");
-  const secret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-  if (!sig || !secret) return new Response("Missing signature", { status: 400 });
+  const secrets = [Deno.env.get("STRIPE_WEBHOOK_SECRET_LIVE"), Deno.env.get("STRIPE_WEBHOOK_SECRET_TEST")].filter(Boolean) as string[];
+  if (!sig || !secrets.length) return new Response("Missing signature", { status: 400 });
 
   const raw = await req.text();
-  let event: Stripe.Event;
-  try {
-    event = await stripe.webhooks.constructEventAsync(raw, sig, secret, undefined, crypto);
-  } catch (e) {
-    console.error("Bad signature", (e as Error).message);
+  let event: Stripe.Event | null = null;
+  for (const secret of secrets) {
+    try { event = await stripe.webhooks.constructEventAsync(raw, sig, secret, undefined, crypto); break; } catch { /* try the next one */ }
+  }
+  if (!event) {
+    console.error("Bad signature");
     return new Response("Bad signature", { status: 400 });
   }
 

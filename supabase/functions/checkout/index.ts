@@ -1,6 +1,7 @@
 // Public checkout endpoint.
 //   action "start":  validate basket + delivery details, create a pending order, return a Stripe Checkout URL
 //   action "status": look up an order by its Stripe session id for the thank-you page
+// Live keys by default. Test keys only when a signed-in admin asks for test mode (body.test + their session token).
 // Prices always come from the database, never from the browser.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -32,12 +33,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Use POST" }, 405);
 
-  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-  if (!stripeKey) return json({ error: "Checkout isn’t switched on yet." }, 503);
-  const stripe = new Stripe(stripeKey, { httpClient: Stripe.createFetchHttpClient() });
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const stripeFor = (live: boolean) => {
+    const k = Deno.env.get(live ? "STRIPE_SECRET_KEY_LIVE" : "STRIPE_SECRET_KEY_TEST");
+    return k ? new Stripe(k, { httpClient: Stripe.createFetchHttpClient() }) : null;
+  };
 
   let body: Record<string, unknown> = {};
   try { body = await req.json(); } catch { /* empty */ }
@@ -46,6 +48,8 @@ Deno.serve(async (req) => {
     if (body.action === "status") {
       const sid = clean(body.session_id, 200);
       if (!/^cs_(test|live)_[A-Za-z0-9]+$/.test(sid)) return json({ error: "Unknown order." }, 404);
+      const stripe = stripeFor(sid.startsWith("cs_live_"));
+      if (!stripe) return json({ error: "Unknown order." }, 404);
       const { data: o } = await sb.from("orders")
         .select("order_number,status,subtotal_cents,delivery_name,address_line1,city,zip,week_id,weeks(delivery_date,delivery_window),order_items(name,unit,quantity,line_total_cents)")
         .eq("stripe_checkout_session_id", sid).maybeSingle();
@@ -63,6 +67,18 @@ Deno.serve(async (req) => {
     }
 
     if (body.action !== "start") return json({ error: "Unknown action." }, 400);
+
+    // ---- live or test payment
+    let live = true;
+    if (body.test === true) {
+      const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+      const { data: who } = token ? await sb.auth.getUser(token) : { data: null };
+      const { data: admin } = who?.user ? await sb.from("admins").select("user_id").eq("user_id", who.user.id).maybeSingle() : { data: null };
+      if (!admin) return json({ error: "Test mode is only for signed-in kitchen admins. Sign in on the kitchen page, or switch test mode off." }, 403);
+      live = false;
+    }
+    const stripe = stripeFor(live);
+    if (!stripe) return json({ error: live ? "Checkout isn’t switched on yet." : "The Stripe test key isn’t set up." }, 503);
 
     // ---- validate delivery details
     const d = (body.delivery ?? {}) as Record<string, unknown>;
@@ -119,7 +135,7 @@ Deno.serve(async (req) => {
     const { data: order, error: oErr } = await sb.from("orders").insert({
       week_id: wk.week_id, customer_id: customerId, status: "pending_payment", subtotal_cents: subtotal,
       delivery_name: delivery.name, address_line1: delivery.line1, address_line2: delivery.line2, city: delivery.city,
-      state: "MD", zip: delivery.zip, phone: delivery.phone, delivery_notes: delivery.notes, gift_message: delivery.gift,
+      state: "MD", zip: delivery.zip, livemode: live, phone: delivery.phone, delivery_notes: delivery.notes, gift_message: delivery.gift,
     }).select("id,order_number").single();
     if (oErr) throw oErr;
     const { error: iErr } = await sb.from("order_items").insert(lines.map((l) => ({
@@ -134,7 +150,7 @@ Deno.serve(async (req) => {
       mode: "payment",
       customer_email: delivery.email,
       client_reference_id: order.id,
-      metadata: { order_id: order.id, order_number: String(order.order_number) },
+      metadata: { order_id: order.id, order_number: String(order.order_number), mode: live ? "live" : "test" },
       payment_intent_data: {
         metadata: { order_id: order.id, order_number: String(order.order_number) },
         description: `Rail Trail Bakehouse order #${order.order_number} · delivery ${deliveryDay}`,
@@ -152,7 +168,7 @@ Deno.serve(async (req) => {
       expires_at: Math.floor(now / 1000) + 30 * 60 + 60,
     });
     await sb.from("orders").update({ stripe_checkout_session_id: session.id }).eq("id", order.id);
-    return json({ url: session.url, order_number: order.order_number });
+    return json({ url: session.url, order_number: order.order_number, test: !live });
   } catch (e) {
     console.error(e);
     return json({ error: "Something went wrong starting checkout. Please try again, or email hello@railtrailbakehouse.com." }, 500);

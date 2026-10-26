@@ -203,6 +203,26 @@
   document.head.appendChild(el('style', { text: css }));
 
   // ---------- toast ----------
+  // Stripe test mode, switched on from the kitchen page Settings on this device only.
+  function testMode() {
+    try {
+      if (localStorage.getItem('rt-test-mode') !== '1') return null;
+      var sess = JSON.parse(localStorage.getItem('sb-rjkwrvmhermwdkgekcto-auth-token') || 'null');
+      return { token: sess && sess.access_token };
+    } catch (e) { return null; }
+  }
+  function testBar() {
+    if (!testMode() || document.getElementById('rt-testbar')) return;
+    var b = document.createElement('div'); b.id = 'rt-testbar'; b.setAttribute('role', 'status');
+    b.style.cssText = 'position:relative;z-index:50;background:#f3d36b;color:#2a1c13;font:15px/1.3 system-ui,sans-serif;padding:8px 14px;display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap';
+    b.innerHTML = '<span><b>Test mode</b> · checkout uses Stripe test card 4242 4242 4242 4242</span>';
+    var off = document.createElement('button'); off.type = 'button'; off.textContent = 'Turn off';
+    off.style.cssText = 'background:#2a1c13;color:#f3d36b;border:0;border-radius:4px;padding:5px 10px;font:inherit;cursor:pointer';
+    off.onclick = function () { try { localStorage.removeItem('rt-test-mode'); } catch (e) {} b.remove(); };
+    b.appendChild(off); document.body.insertBefore(b, document.body.firstChild);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', testBar); else testBar();
+
   var toastEl, toastTimer;
   function toast(msg, withView) {
     if (toastEl) toastEl.remove();
@@ -347,9 +367,11 @@
     if (zones && zones.length && !zones.some(function (z) { return z.zip === zip5; })) return fieldError('zip', 'Sorry, we don’t deliver to ' + zip5 + ' yet. We deliver within about 15 minutes of Hereford. Email hello@railtrailbakehouse.com if you’re just outside.');
     goBtn.disabled = true; goBtn.textContent = 'Opening secure checkout…';
     var items = RT.lines().map(function (l) { return { slug: l.item.slug, qty: l.qty }; });
+    var hdr = { 'Content-Type': 'application/json', apikey: SUPA_KEY }, test = testMode();
+    if (test && test.token) hdr.Authorization = 'Bearer ' + test.token;
     fetch(SUPA_URL.replace('/rest/v1/', '/functions/v1/checkout'), {
-      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPA_KEY },
-      body: JSON.stringify({ action: 'start', items: items, delivery: v })
+      method: 'POST', headers: hdr,
+      body: JSON.stringify({ action: 'start', items: items, delivery: v, test: !!test })
     }).then(function (r) { return r.json().catch(function () { return { error: 'Checkout could not start. Please try again.' }; }); })
       .then(function (d) {
         if (d && d.url) { location.href = d.url; return; }
