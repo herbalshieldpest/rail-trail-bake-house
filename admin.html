@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitchen · Rail Trail Bakehouse</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--frame:#1b2e31;--card:#f1ebe0;--paper:#f7f3eb;--ink:#2a1c13;--muted:#6b5a4b;--line:#c3b5a0;--soft:#e6d9c6;--green:#2f4a37;--gilt:#e2cf9f;--red:#9a3b2b;--ok:#3d6b4a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--frame);color:var(--ink);font-family:'EB Garamond',Georgia,serif;font-size:17px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(16px,3vw,32px);color:var(--card)}
+header .brand{display:flex;align-items:baseline;gap:12px}
+header .brand b{font-weight:500;font-size:22px;letter-spacing:.02em}
+header .brand span{font-variant:small-caps;letter-spacing:.12em;color:var(--gilt);font-size:15px}
+header .who{font-size:14px;opacity:.85;display:flex;gap:14px;align-items:center}
+header .who button{background:none;border:1px solid rgba(241,235,224,.4);color:var(--card);border-radius:4px;padding:4px 10px;cursor:pointer}
+main{max-width:1180px;margin:0 auto 40px;background:var(--card);border-radius:10px;min-height:70vh;padding:clamp(18px,3vw,36px)}
+h1,h2,h3{font-weight:500;margin:0}
+h1{font-size:28px;letter-spacing:.02em}
+h2{font-size:22px;margin-bottom:10px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+nav.tabs{display:flex;flex-wrap:wrap;gap:0 4px;border-bottom:1px solid var(--line);margin:0 0 22px}
+nav.tabs button{background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;font-variant:small-caps;letter-spacing:.1em;font-size:16px;color:var(--muted);white-space:nowrap}
+nav.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--green)}
+.btn{background:var(--green);color:var(--gilt);border:none;border-radius:4px;padding:9px 16px;cursor:pointer;font-weight:600;font-variant:small-caps;letter-spacing:.08em;outline:1px dashed rgba(226,207,159,.7);outline-offset:-4px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--ink);outline:none;border:1px solid var(--line)}
+.btn.warn{background:var(--red);color:#fff;outline-color:rgba(255,255,255,.5)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=datetime-local],select,textarea{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%}
+textarea{min-height:60px;resize:vertical}
+label.f{display:block;font-size:14px;color:var(--muted);margin-bottom:12px}
+label.f>span{display:block;margin-bottom:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;font-variant:small-caps;letter-spacing:.08em;color:var(--muted);font-size:15px;padding:8px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--soft);vertical-align:top}
+td input,td select{min-width:70px}
+.pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:13px;font-variant:small-caps;letter-spacing:.08em;border:1px solid currentColor}
+.pill.published{color:var(--ok)}.pill.draft{color:var(--muted)}.pill.archived{color:var(--muted)}
+.card{background:var(--paper);border:1px solid var(--soft);border-radius:8px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--frame);color:var(--card);padding:10px 18px;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10;font-size:15px}
+.toast.err{background:var(--red)}
+.center{max-width:380px;margin:60px auto}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:8px}
+.hide{display:none!important}
+.order{border-top:1px solid var(--soft);padding:14px 0}
+.order:first-child{border-top:none}
+.price-in{max-width:100px}
+@media (max-width:700px){td,th{padding:6px 4px}.hide-sm{display:none}}
+@media (max-width:600px){nav.tabs{display:grid;grid-template-columns:repeat(3,1fr)}nav.tabs button{padding:10px 4px;font-size:15px}#whoEmail{display:none}header .brand b{font-size:19px}header{padding-top:12px;padding-bottom:12px}}
+@media print{
+ body{background:#fff}header,nav.tabs,.no-print,.toast{display:none!important}
+ main{border-radius:0;padding:0;max-width:none}
+ .print-only{display:block!important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Rail Trail Bakehouse</b><span>kitchen</span></div>
+  <div class="who hide" id="who"><span id="whoEmail"></span><button id="signOut" type="button">Sign out</button></div>
+</header>
+<main id="app"><p class="muted">Loading…</p></main>
+
+<script>
+(function () {
+  var SUPA_URL = 'https://rjkwrvmhermwdkgekcto.supabase.co';
+  var SUPA_KEY = 'sb_publishable_3uMAgWtXcYXgEhh6pl5KXg_-9S7_OST';
+  var TZ = 'America/New_York';
+  var app = document.getElementById('app');
+
+  if (!window.supabase) { app.innerHTML = '<p>Could not load the sign-in library. Check your connection and reload.</p>'; return; }
+  var sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: false } });
+
+  var state = { tab: 'week', weeks: [], weekId: null, products: [] };
+
+  // ---------- helpers ----------
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    attrs = attrs || {};
+    for (var k in attrs) {
+      var v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === 'text') el.textContent = v;
+      else if (k === 'html') el.innerHTML = v;
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+      else if (v === true) el.setAttribute(k, '');
+      else el.setAttribute(k, v);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x) el.appendChild(typeof x === 'string' ? document.createTextNode(x) : x); });
+      else el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return el;
+  }
+  function toast(msg, err) {
+    var t = h('div', { class: 'toast' + (err ? ' err' : ''), role: 'status', text: msg });
+    document.body.appendChild(t); setTimeout(function () { t.remove(); }, err ? 5000 : 2200);
+  }
+  function money(c) { return c == null ? '—' : '$' + (c / 100).toFixed(2).replace(/\.00$/, ''); }
+  function toCents(v) { v = String(v || '').replace(/[$,\s]/g, ''); if (v === '') return null; var n = Math.round(parseFloat(v) * 100); return isNaN(n) ? NaN : n; }
+  function centsToInput(c) { return c == null ? '' : (c / 100).toFixed(2); }
+  function fmtDate(d) { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+  function fmtTs(ts) { return new Date(ts).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: TZ }); }
+  function check(res) { if (res.error) { toast(res.error.message || 'Something went wrong', true); throw res.error; } return res.data; }
+
+  // ---------- auth ----------
+  function renderSignIn(msg) {
+    document.getElementById('who').classList.add('hide');
+    var email = h('input', { type: 'email', autocomplete: 'username', required: true });
+    var pw = h('input', { type: 'password', autocomplete: 'current-password', required: true });
+    var btn = h('button', { class: 'btn', type: 'submit', text: 'Sign in' });
+    var err = h('p', { class: 'small', style: 'color:var(--red)', text: msg || '' });
+    var form = h('form', { class: 'center card', onsubmit: function (e) {
+      e.preventDefault(); btn.disabled = true; err.textContent = '';
+      sb.auth.signInWithPassword({ email: email.value.trim(), password: pw.value }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { err.textContent = 'That email and password did not match.'; return; }
+        boot();
+      });
+    } },
+      h('h1', { text: 'Sign in' }),
+      h('p', { class: 'muted small', text: 'For the Rail Trail kitchen only.' }),
+      h('label', { class: 'f' }, h('span', { text: 'Email' }), email),
+      h('label', { class: 'f' }, h('span', { text: 'Password' }), pw),
+      err, btn);
+    app.replaceChildren(form); email.focus();
+  }
+
+  function renderSetPassword(user) {
+    var p1 = h('input', { type: 'password', autocomplete: 'new-password', minlength: '10', required: true });
+    var p2 = h('input', { type: 'password', autocomplete: 'new-password', minlength: '10', required: true });
+    var err = h('p', { class: 'small', style: 'color:var(--red)' });
+    var btn = h('button', { class: 'btn', type: 'submit', text: 'Save password' });
+    app.replaceChildren(h('form', { class: 'center card', onsubmit: function (e) {
+      e.preventDefault(); err.textContent = '';
+      if (p1.value.length < 10) { err.textContent = 'Use at least 10 characters.'; return; }
+      if (p1.value !== p2.value) { err.textContent = 'The two passwords do not match.'; return; }
+      btn.disabled = true;
+      sb.auth.updateUser({ password: p1.value, data: { must_change_password: false } }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { err.textContent = r.error.message; return; }
+        toast('Password saved'); boot();
+      });
+    } },
+      h('h1', { text: 'Choose your password' }),
+      h('p', { class: 'muted small', text: 'You signed in with a temporary password. Pick your own to finish setting up.' }),
+      h('label', { class: 'f' }, h('span', { text: 'New password (10+ characters)' }), p1),
+      h('label', { class: 'f' }, h('span', { text: 'Type it again' }), p2),
+      err, btn));
+    p1.focus();
+  }
+
+  function boot() {
+    sb.auth.getSession().then(function (r) {
+      var session = r.data && r.data.session;
+      if (!session) return renderSignIn();
+      var user = session.user;
+      document.getElementById('whoEmail').textContent = user.email;
+      document.getElementById('who').classList.remove('hide');
+      if (user.user_metadata && user.user_metadata.must_change_password) return renderSetPassword(user);
+      sb.from('admins').select('user_id').eq('user_id', user.id).maybeSingle().then(function (a) {
+        if (a.error || !a.data) {
+          app.replaceChildren(h('div', { class: 'center card' }, h('h1', { text: 'No kitchen access' }), h('p', { class: 'muted', text: 'This account is not set up as an admin.' })));
+          return;
+        }
+        loadAll().then(render);
+      });
+    });
+  }
+  document.getElementById('signOut').addEventListener('click', function () { sb.auth.signOut().then(function () { renderSignIn(); }); });
+
+  // ---------- data ----------
+  function loadAll() {
+    return Promise.all([
+      sb.from('weeks').select('*').order('delivery_date', { ascending: false }),
+      sb.from('products').select('*').order('sort')
+    ]).then(function (rs) {
+      state.weeks = check(rs[0]) || []; state.products = check(rs[1]) || [];
+      if (!state.weekId || !state.weeks.some(function (w) { return w.id === state.weekId; })) {
+        var now = Date.now();
+        var cur = state.weeks.slice().reverse().find(function (w) { return new Date(w.closes_at).getTime() > now && w.status === 'published'; });
+        state.weekId = (cur || state.weeks[0] || {}).id || null;
+      }
+    });
+  }
+  function week() { return state.weeks.find(function (w) { return w.id === state.weekId; }); }
+  function product(id) { return state.products.find(function (p) { return p.id === id; }); }
+
+  // ---------- layout ----------
+  var TABS = [['week', 'Weekly menu'], ['orders', 'Orders'], ['bake', 'Bake sheet'], ['delivery', 'Delivery sheet'], ['products', 'Products'], ['settings', 'Settings']];
+  function render() {
+    var tabs = h('nav', { class: 'tabs', role: 'tablist' }, TABS.map(function (t) {
+      return h('button', { type: 'button', role: 'tab', 'aria-selected': state.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { state.tab = t[0]; render(); } });
+    }));
+    var body = h('div');
+    app.replaceChildren(tabs, body);
+    var fn = { week: viewWeek, orders: viewOrders, bake: viewBake, delivery: viewDelivery, products: viewProducts, settings: viewSettings }[state.tab];
+    fn(body);
+  }
+  function weekPicker(onchange) {
+    var sel = h('select', { 'aria-label': 'Week', style: 'width:auto', onchange: function () { state.weekId = sel.value; onchange(); } },
+      state.weeks.map(function (w) { return h('option', { value: w.id, selected: w.id === state.weekId, text: 'Delivery ' + fmtDate(w.delivery_date) + (w.status !== 'published' ? ' (' + w.status + ')' : '') }); }));
+    return sel;
+  }
+
+  // ---------- weekly menu ----------
+  function viewWeek(root) {
+    var w = week();
+    var newBtn = h('button', { class: 'btn ghost', type: 'button', text: '+ Start next week', onclick: function () {
+      newBtn.disabled = true;
+      sb.rpc('create_next_week').then(function (r) { newBtn.disabled = false; check(r); state.weekId = r.data; toast('Next week created as a draft'); loadAll().then(render); });
+    } });
+    root.appendChild(h('div', { class: 'spread' },
+      h('div', {}, h('h1', { text: 'Weekly menu' }), h('p', { class: 'muted small', text: 'Pick the bakes for a delivery Tuesday, set prices, then publish it so customers see it on Wednesday.' })),
+      h('div', { class: 'row no-print' }, state.weeks.length ? weekPicker(render) : null, newBtn)));
+    if (!w) { root.appendChild(h('div', { class: 'empty', text: 'No weeks yet. Start one above.' })); return; }
+
+    var published = w.status === 'published';
+    var pubBtn = h('button', { class: published ? 'btn ghost' : 'btn', type: 'button', text: published ? 'Unpublish' : 'Publish this week', onclick: function () {
+      pubBtn.disabled = true;
+      sb.from('weeks').update({ status: published ? 'draft' : 'published' }).eq('id', w.id).then(function (r) { check(r); toast(published ? 'Moved back to draft' : 'Published'); loadAll().then(render); });
+    } });
+    var opens = h('input', { type: 'datetime-local', value: toLocalInput(w.opens_at) });
+    var closes = h('input', { type: 'datetime-local', value: toLocalInput(w.closes_at) });
+    var note = h('input', { type: 'text', value: w.note || '', placeholder: 'Optional note, e.g. “Thanksgiving week”' });
+    var saveTimes = h('button', { class: 'btn ghost', type: 'button', text: 'Save times', onclick: function () {
+      saveTimes.disabled = true;
+      sb.from('weeks').update({ opens_at: fromLocalInput(opens.value), closes_at: fromLocalInput(closes.value), note: note.value }).eq('id', w.id)
+        .then(function (r) { saveTimes.disabled = false; check(r); toast('Saved'); loadAll().then(render); });
+    } });
+    root.appendChild(h('div', { class: 'grid2', style: 'margin-bottom:22px' },
+      h('div', { class: 'card' },
+        h('div', { class: 'row', style: 'justify-content:space-between;margin-bottom:8px' }, h('h2', { style: 'margin:0', text: 'Delivery ' + fmtDate(w.delivery_date) }), h('span', { class: 'pill ' + w.status, text: w.status })),
+        h('p', { class: 'small muted', style: 'margin:0 0 12px' }, 'Bake ' + fmtDate(w.bake_date) + ' · deliver ' + (w.delivery_window || '')),
+        h('p', { class: 'small', style: 'margin:0 0 14px' }, 'Menu goes up ' + fmtTs(w.opens_at) + '. Orders close ' + fmtTs(w.closes_at) + '.'),
+        pubBtn),
+      h('div', { class: 'card' },
+        h('label', { class: 'f' }, h('span', { text: 'Menu goes up (Eastern time)' }), opens),
+        h('label', { class: 'f' }, h('span', { text: 'Orders close (Eastern time)' }), closes),
+        h('label', { class: 'f' }, h('span', { text: 'Note' }), note), saveTimes)));
+
+    var list = h('div');
+    root.appendChild(h('h2', { text: 'On the menu' }));
+    root.appendChild(list);
+    sb.from('week_items').select('*').eq('week_id', w.id).order('sort').then(function (r) {
+      var items = check(r) || [];
+      var onIds = items.map(function (i) { return i.product_id; });
+      if (!items.length) list.appendChild(h('div', { class: 'empty', text: 'Nothing on this week’s menu yet. Add a bake below.' }));
+      else list.appendChild(h('table', {},
+        h('thead', {}, h('tr', {}, h('th', { text: 'Bake' }), h('th', { text: 'Price' }), h('th', { class: 'hide-sm', text: 'Limit' }), h('th', { class: 'hide-sm', text: 'Featured' }), h('th', { text: '' }))),
+        h('tbody', {}, items.map(function (it) {
+          var p = product(it.product_id) || {};
+          var price = h('input', { type: 'text', inputmode: 'decimal', class: 'price-in', value: centsToInput(it.price_cents), placeholder: centsToInput(p.price_cents) || 'price', 'aria-label': 'Price for ' + p.name });
+          var limit = h('input', { type: 'number', min: '0', class: 'price-in', value: it.batch_limit == null ? '' : it.batch_limit, placeholder: 'none', 'aria-label': 'Limit for ' + p.name });
+          var feat = h('input', { type: 'checkbox', checked: it.featured, 'aria-label': 'Featured' });
+          function save() {
+            var c = toCents(price.value); if (isNaN(c)) { toast('Price should be a number like 12 or 12.50', true); return; }
+            sb.from('week_items').update({ price_cents: c, batch_limit: limit.value === '' ? null : parseInt(limit.value, 10), featured: feat.checked })
+              .eq('week_id', w.id).eq('product_id', it.product_id).then(function (r) { check(r); toast('Saved'); });
+          }
+          price.addEventListener('change', save); limit.addEventListener('change', save); feat.addEventListener('change', save);
+          return h('tr', {},
+            h('td', {}, h('div', { text: p.name || '?' }), h('div', { class: 'small muted', text: (p.unit || '') + (it.price_cents == null ? ' · usual price ' + money(p.price_cents) : '') + (it.batch_limit != null ? ' · ' + it.sold_count + ' sold' : '') })),
+            h('td', {}, price), h('td', { class: 'hide-sm' }, limit), h('td', { class: 'hide-sm' }, feat),
+            h('td', { style: 'text-align:right' }, h('button', { class: 'btn ghost', type: 'button', text: 'Remove', onclick: function () {
+              sb.from('week_items').delete().eq('week_id', w.id).eq('product_id', it.product_id).then(function (r) { check(r); render(); });
+            } })));
+        }))));
+      var avail = state.products.filter(function (p) { return p.active && onIds.indexOf(p.id) < 0; });
+      if (avail.length) {
+        var sel = h('select', { style: 'width:auto' }, avail.map(function (p) { return h('option', { value: p.id, text: p.name + (p.price_cents != null ? ' · ' + money(p.price_cents) : '') }); }));
+        list.appendChild(h('div', { class: 'row no-print', style: 'margin-top:14px' }, sel, h('button', { class: 'btn', type: 'button', text: 'Add to menu', onclick: function () {
+          var p = product(sel.value);
+          sb.from('week_items').insert({ week_id: w.id, product_id: p.id, sort: p.sort }).then(function (r) { check(r); render(); });
+        } })));
+      }
+      list.appendChild(h('p', { class: 'small muted', style: 'margin-top:10px', text: 'Leave a price blank to use the bake’s usual price. Leave the limit blank for no limit. Changes save as you leave each box.' }));
+    });
+  }
+  function toLocalInput(ts) {
+    var d = new Date(ts);
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d);
+    var o = {}; parts.forEach(function (p) { o[p.type] = p.value; });
+    return o.year + '-' + o.month + '-' + o.day + 'T' + (o.hour === '24' ? '00' : o.hour) + ':' + o.minute;
+  }
+  function fromLocalInput(v) {
+    // v is Eastern wall-clock time; find the matching UTC instant
+    var guess = new Date(v + ':00Z');
+    for (var i = 0; i < 2; i++) {
+      var shown = toLocalInput(guess.toISOString());
+      var diff = new Date(v + ':00Z') - new Date(shown + ':00Z');
+      guess = new Date(guess.getTime() + diff);
+    }
+    return guess.toISOString();
+  }
+
+  // ---------- orders ----------
+  var STATUSES = ['pending_payment', 'paid', 'baked', 'out_for_delivery', 'delivered', 'cancelled', 'refunded'];
+  function loadOrders(w) {
+    return sb.from('orders').select('*, customers(email,name,phone), order_items(name,unit,quantity,unit_price_cents,line_total_cents)').eq('week_id', w.id).order('order_number');
+  }
+  function viewOrders(root) {
+    var w = week();
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Orders' }), w ? h('p', { class: 'muted small', text: 'Delivery ' + fmtDate(w.delivery_date) }) : null), w ? weekPicker(render) : null));
+    if (!w) { root.appendChild(h('div', { class: 'empty', text: 'No weeks yet.' })); return; }
+    var box = h('div', { text: 'Loading…', class: 'muted' }); root.appendChild(box);
+    loadOrders(w).then(function (r) {
+      var orders = check(r) || [];
+      box.replaceChildren(); box.className = '';
+      if (!orders.length) { box.appendChild(h('div', { class: 'empty', text: 'No orders for this week yet. They will appear here as customers check out.' })); return; }
+      var paid = orders.filter(function (o) { return ['paid', 'baked', 'out_for_delivery', 'delivered'].indexOf(o.status) >= 0; });
+      var total = paid.reduce(function (s, o) { return s + o.subtotal_cents; }, 0);
+      box.appendChild(h('p', { text: paid.length + ' paid order' + (paid.length === 1 ? '' : 's') + ' · ' + money(total) }));
+      orders.forEach(function (o) {
+        var sel = h('select', { style: 'width:auto', 'aria-label': 'Status', onchange: function () {
+          var patch = { status: sel.value }; if (sel.value === 'delivered') patch.delivered_at = new Date().toISOString();
+          sb.from('orders').update(patch).eq('id', o.id).then(function (r) { check(r); toast('Order #' + o.order_number + ' → ' + sel.value.replace(/_/g, ' ')); });
+        } }, STATUSES.map(function (s) { return h('option', { value: s, selected: s === o.status, text: s.replace(/_/g, ' ') }); }));
+        box.appendChild(h('div', { class: 'order' },
+          h('div', { class: 'row', style: 'justify-content:space-between' }, h('b', { text: '#' + o.order_number + ' · ' + o.delivery_name }), sel),
+          h('div', { class: 'small' }, o.address_line1 + (o.address_line2 ? ', ' + o.address_line2 : '') + ', ' + o.city + ' ' + o.zip),
+          h('div', { class: 'small muted' }, [(o.customers && o.customers.email) || '', o.phone || (o.customers && o.customers.phone) || ''].filter(Boolean).join(' · ')),
+          o.delivery_notes ? h('div', { class: 'small', text: 'Note: ' + o.delivery_notes }) : null,
+          o.gift_message ? h('div', { class: 'small', text: 'Gift message: ' + o.gift_message }) : null,
+          h('ul', { class: 'small', style: 'margin:6px 0 0;padding-left:18px' }, (o.order_items || []).map(function (i) { return h('li', { text: i.quantity + ' × ' + i.name + ' — ' + money(i.line_total_cents) }); })),
+          h('div', { class: 'small', style: 'margin-top:4px' }, 'Total ' + money(o.subtotal_cents))));
+      });
+    });
+  }
+
+  // ---------- bake sheet ----------
+  function viewBake(root) {
+    var w = week();
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Bake sheet' }), w ? h('p', { class: 'muted small', text: 'Bake ' + (w ? fmtDate(w.bake_date) : '') + ' · paid orders only' }) : null),
+      h('div', { class: 'row no-print' }, w ? weekPicker(render) : null, h('button', { class: 'btn ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } }))));
+    if (!w) return;
+    sb.from('bake_sheet').select('*').eq('week_id', w.id).order('name').then(function (r) {
+      var rows = check(r) || [];
+      if (!rows.length) { root.appendChild(h('div', { class: 'empty', text: 'Nothing to bake yet. Totals appear here once orders are paid.' })); return; }
+      root.appendChild(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Bake' }), h('th', { text: 'Unit' }), h('th', { text: 'Quantity', style: 'text-align:right' }))),
+        h('tbody', {}, rows.map(function (x) { return h('tr', {}, h('td', { text: x.name }), h('td', { class: 'muted', text: x.unit }), h('td', { style: 'text-align:right;font-size:20px', text: String(x.quantity) })); }))));
+    });
+  }
+
+  // ---------- delivery sheet ----------
+  function viewDelivery(root) {
+    var w = week();
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Delivery sheet' }), w ? h('p', { class: 'muted small', text: fmtDate(w.delivery_date) + ' · ' + (w.delivery_window || '') + ' · grouped by zip' }) : null),
+      h('div', { class: 'row no-print' }, w ? weekPicker(render) : null, h('button', { class: 'btn ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } }))));
+    if (!w) return;
+    loadOrders(w).then(function (r) {
+      var orders = (check(r) || []).filter(function (o) { return ['paid', 'baked', 'out_for_delivery'].indexOf(o.status) >= 0; });
+      if (!orders.length) { root.appendChild(h('div', { class: 'empty', text: 'No deliveries yet. Paid orders appear here, grouped by area.' })); return; }
+      orders.sort(function (a, b) { return a.zip.localeCompare(b.zip) || a.address_line1.localeCompare(b.address_line1); });
+      root.appendChild(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: '#' }), h('th', { text: 'Deliver to' }), h('th', { text: 'Items' }), h('th', { class: 'no-print', text: 'Done' }))),
+        h('tbody', {}, orders.map(function (o) {
+          return h('tr', {},
+            h('td', { text: String(o.order_number) }),
+            h('td', {}, h('b', { text: o.delivery_name }), h('div', { text: o.address_line1 + (o.address_line2 ? ', ' + o.address_line2 : '') }), h('div', { class: 'small', text: o.city + ' ' + o.zip }),
+              h('div', { class: 'small muted', text: o.phone || (o.customers && o.customers.phone) || '' }), o.delivery_notes ? h('div', { class: 'small', text: o.delivery_notes }) : null),
+            h('td', { class: 'small' }, (o.order_items || []).map(function (i) { return h('div', { text: i.quantity + ' × ' + i.name }); })),
+            h('td', { class: 'no-print' }, h('button', { class: 'btn ghost', type: 'button', text: 'Delivered', onclick: function () {
+              sb.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', o.id).then(function (r) { check(r); toast('Marked delivered'); render(); });
+            } })));
+        }))));
+    });
+  }
+
+  // ---------- products ----------
+  var CATS = ['bread', 'rolls', 'cookies', 'pies', 'pastry', 'gifts', 'wild_card'];
+  var ICONS = ['wheat', 'trefoil', 'rosette', 'lattice', 'swirl'];
+  function viewProducts(root) {
+    root.appendChild(h('div', { class: 'spread' }, h('div', {}, h('h1', { text: 'Products' }), h('p', { class: 'muted small', text: 'Everything you bake. Weekly menus pick from this list.' })),
+      h('button', { class: 'btn', type: 'button', text: '+ New product', onclick: function () { editProduct(root, null); } })));
+    root.appendChild(h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Name' }), h('th', { class: 'hide-sm', text: 'Category' }), h('th', { text: 'Price' }), h('th', { class: 'hide-sm', text: 'Status' }), h('th', { text: '' }))),
+      h('tbody', {}, state.products.map(function (p) {
+        return h('tr', {}, h('td', {}, h('div', { text: p.name }), h('div', { class: 'small muted', text: p.unit })), h('td', { class: 'hide-sm', text: p.category.replace('_', ' ') }),
+          h('td', { text: money(p.price_cents) }), h('td', { class: 'hide-sm' }, h('span', { class: 'pill ' + (p.active ? 'published' : 'draft'), text: p.active ? 'active' : 'hidden' })),
+          h('td', { style: 'text-align:right' }, h('button', { class: 'btn ghost', type: 'button', text: 'Edit', onclick: function () { editProduct(root, p); } })));
+      }))));
+  }
+  function editProduct(root, p) {
+    var isNew = !p; p = p || { name: '', unit: '', description: '', category: 'bread', price_cents: null, icon: 'rosette', active: true, shippable: false, sort: (state.products.length + 1) * 10 };
+    var f = {
+      name: h('input', { type: 'text', value: p.name, required: true }),
+      unit: h('input', { type: 'text', value: p.unit, placeholder: 'One loaf, Half dozen…' }),
+      price: h('input', { type: 'text', inputmode: 'decimal', value: centsToInput(p.price_cents), placeholder: '12.00' }),
+      category: h('select', {}, CATS.map(function (c) { return h('option', { value: c, selected: c === p.category, text: c.replace('_', ' ') }); })),
+      icon: h('select', {}, ICONS.map(function (c) { return h('option', { value: c, selected: c === p.icon, text: c }); })),
+      description: h('textarea', {}, p.description || ''),
+      sort: h('input', { type: 'number', value: p.sort }),
+      active: h('input', { type: 'checkbox', checked: p.active }),
+      shippable: h('input', { type: 'checkbox', checked: p.shippable })
+    };
+    var err = h('p', { class: 'small', style: 'color:var(--red)' });
+    var form = h('form', { class: 'card', style: 'max-width:640px', onsubmit: function (e) {
+      e.preventDefault(); err.textContent = '';
+      var cents = toCents(f.price.value); if (isNaN(cents)) { err.textContent = 'Price should be a number like 12 or 12.50.'; return; }
+      var row = { name: f.name.value.trim(), unit: f.unit.value.trim(), price_cents: cents, category: f.category.value, icon: f.icon.value,
+        description: f.description.value.trim(), sort: parseInt(f.sort.value || '0', 10), active: f.active.checked, shippable: f.shippable.checked };
+      if (!row.name) { err.textContent = 'Give it a name.'; return; }
+      var q = isNew ? sb.from('products').insert(Object.assign({ slug: slugify(row.name) }, row)) : sb.from('products').update(row).eq('id', p.id);
+      q.then(function (r) { if (r.error) { err.textContent = r.error.message; return; } toast('Saved'); loadAll().then(render); });
+    } },
+      h('h2', { text: isNew ? 'New product' : 'Edit ' + p.name }),
+      h('label', { class: 'f' }, h('span', { text: 'Name' }), f.name),
+      h('div', { class: 'grid2' }, h('label', { class: 'f' }, h('span', { text: 'Unit' }), f.unit), h('label', { class: 'f' }, h('span', { text: 'Usual price ($)' }), f.price)),
+      h('div', { class: 'grid2' }, h('label', { class: 'f' }, h('span', { text: 'Category' }), f.category), h('label', { class: 'f' }, h('span', { text: 'Menu icon' }), f.icon)),
+      h('label', { class: 'f' }, h('span', { text: 'Description' }), f.description),
+      h('div', { class: 'grid2' }, h('label', { class: 'f' }, h('span', { text: 'Sort order' }), f.sort),
+        h('div', {}, h('label', { class: 'row small' }, f.active, ' Active (can go on menus)'), h('label', { class: 'row small', style: 'margin-top:6px' }, f.shippable, ' Can ship (for later)'))),
+      err, h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit', text: 'Save' }), h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: render })));
+    root.replaceChildren(form); f.name.focus();
+  }
+  function slugify(s) { return s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 6); }
+
+  // ---------- settings ----------
+  function viewSettings(root) {
+    root.appendChild(h('h1', { text: 'Settings', style: 'margin-bottom:16px' }));
+    Promise.all([sb.from('settings').select('*').maybeSingle(), sb.from('delivery_zones').select('*').order('zip')]).then(function (rs) {
+      var s = check(rs[0]) || {}, zones = check(rs[1]) || [];
+      var min = h('input', { type: 'text', inputmode: 'decimal', value: centsToInput(s.min_order_cents) });
+      var drive = h('input', { type: 'number', min: '1', value: s.max_drive_minutes });
+      root.appendChild(h('div', { class: 'grid2' },
+        h('div', { class: 'card' }, h('h2', { text: 'Ordering' }),
+          h('label', { class: 'f' }, h('span', { text: 'Minimum order ($)' }), min),
+          h('label', { class: 'f' }, h('span', { text: 'Delivery area: max drive from ' + (s.origin_label || 'Hereford') + ' (minutes)' }), drive),
+          h('p', { class: 'small muted', text: 'Shipping is ' + (s.shipping_enabled ? 'on' : 'off') + '. It will be switched on when shipping is built.' }),
+          h('button', { class: 'btn', type: 'button', text: 'Save', onclick: function () {
+            var c = toCents(min.value); if (isNaN(c) || c == null) { toast('Minimum should be a number', true); return; }
+            sb.from('settings').update({ min_order_cents: c, max_drive_minutes: parseInt(drive.value, 10) }).eq('id', true).then(function (r) { check(r); toast('Saved'); });
+          } })),
+        zonesCard(zones)));
+    });
+  }
+  function zonesCard(zones) {
+    var zip = h('input', { type: 'text', inputmode: 'numeric', maxlength: '5', placeholder: '21111', style: 'max-width:90px' });
+    var town = h('input', { type: 'text', placeholder: 'Town' });
+    return h('div', { class: 'card' }, h('h2', { text: 'Delivery zip codes' }),
+      h('p', { class: 'small muted', text: 'Used to show the delivery area and as a quick first check at checkout.' }),
+      h('table', {}, h('tbody', {}, zones.map(function (z) {
+        return h('tr', {}, h('td', { text: z.zip }), h('td', { text: z.town }), h('td', { style: 'text-align:right' }, h('button', { class: 'btn ghost', type: 'button', text: 'Remove', onclick: function () {
+          sb.from('delivery_zones').delete().eq('zip', z.zip).then(function (r) { check(r); render(); });
+        } })));
+      }))),
+      h('div', { class: 'row', style: 'margin-top:10px;flex-wrap:nowrap' }, zip, town, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () {
+        if (!/^\d{5}$/.test(zip.value)) { toast('Zip should be 5 digits', true); return; }
+        sb.from('delivery_zones').insert({ zip: zip.value, town: town.value.trim() || zip.value }).then(function (r) { check(r); render(); });
+      } })));
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
