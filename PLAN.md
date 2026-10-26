@@ -30,7 +30,11 @@ Seeded with the five current menu items and prices, the candied nut gift (price 
 - The "Check out" button is in place and becomes real in step 4
 - Every main-nav item is now its own page with its own title and search description: `/menu` (this week), `/breads`, `/pies`, `/cookies`, `/gifts` and `/delivery` (how it works, towns, map and common questions)
 
-## 4. Checkout and payment (Stripe)
+## 4. Checkout and payment (Stripe) — in test mode
+
+- Done: delivery details form in the basket, zip-code area check, prices rechecked on the server, Stripe Checkout (test mode), webhook marks orders paid/cancelled/refunded, thank-you page at `/thanks`
+- Still to do: refunds button in the kitchen page, confirmation emails (needs an email sender), exact 15-minute drive check (needs a maps account), switch to live keys at launch
+
 
 - Stripe Checkout: cards, Apple Pay and Google Pay
 - Address collected and checked before payment: drive time from Hereford must be 15 minutes or less (via a maps routing service), with the zip list as a quick first check

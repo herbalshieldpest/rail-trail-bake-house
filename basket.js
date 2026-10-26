@@ -188,6 +188,16 @@
     '.rt-mi-qty{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#9a3b2b;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 4px;font-family:"EB Garamond",serif}',
     '.rt-count.has{color:#e2cf9f}',
     'body.rtb-lock{overflow:hidden}',
+    '.rtb-form{padding:14px 0 6px}',
+    '.rtb-f{display:block;margin-bottom:12px;font-size:14px;color:#5e4f42}',
+    '.rtb-f span{display:block;margin-bottom:4px}',
+    '.rtb-f input,.rtb-f textarea{display:block;width:100%;box-sizing:border-box;background:#f7f3eb;border:1px solid #c3b5a0;border-radius:4px;padding:9px 10px;font:inherit;font-size:17px;color:#2a1c13}',
+    '.rtb-f textarea{resize:vertical;min-height:56px}',
+    '.rtb-f input:focus,.rtb-f textarea:focus{outline:2px solid #2f4a37;outline-offset:1px}',
+    '.rtb-f [aria-invalid=true]{border-color:#9a3b2b;background:#fbf0ec}',
+    '.rtb-small{font-size:14px;color:#6b5a4b;font-style:italic;margin:4px 0 8px}',
+    '.rtb-err{color:#9a3b2b;font-size:15px;margin:0 0 10px}.rtb-err:empty{display:none}',
+    '.rtb-back{display:block;margin:10px auto 0;background:none;border:none;color:#5e4f42;font:inherit;font-size:15px;font-style:italic;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:6px}',
     '@media (max-width:900px){body.rt-has-bar .rt-toast{bottom:84px}}'
   ].join('\n');
   document.head.appendChild(el('style', { text: css }));
@@ -232,15 +242,18 @@
     dr.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') RT.close();
       if (e.key === 'Tab') {
-        var f = dr.querySelectorAll('button:not([disabled]),a[href]'); if (!f.length) return;
+        var f = dr.querySelectorAll('button:not([disabled]):not([hidden]),a[href],input,textarea'); if (!f.length) return;
         var first = f[0], last = f[f.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     });
   }
+  var mode = 'basket', formEl = null, goBtn = null, errEl = null;
   function renderDrawer() {
     if (!dr) return;
+    if (mode === 'details') return renderDetailsFooter();
+    dr.querySelector('.rtb-hd h2').textContent = 'Your basket';
     var w = RT.week, st = RT.status();
     whenEl.textContent = w ? 'For delivery ' + fmtDay(w.delivery_date) + ', ' + (w.delivery_window || '') : RT.statusLine();
     listEl.replaceChildren();
@@ -261,12 +274,98 @@
       el('p', { class: 'rtb-note', text: short > 0 && lines.length ? 'Add ' + money(short) + ' more to reach the ' + money(min) + ' minimum. Delivery is included.' : 'Delivery is included in every price.' }),
       lines.length && short > 0 ? el('div', { class: 'rtb-bar', 'aria-hidden': 'true' }, el('i', { style: 'width:' + Math.min(100, Math.round(sub / min * 100)) + '%' })) : null,
       el('button', { type: 'button', class: 'rtb-go', disabled: !canGo, text: st.state !== 'open' ? 'Ordering closed' : (short > 0 ? 'Minimum order ' + money(min) : 'Check out · ' + money(sub)),
-        onclick: function () { if (typeof RT.checkout === 'function') return RT.checkout(); msg.hidden = false; msg.textContent = 'Checkout is the next piece being built. Your basket will be kept until then.'; } }),
+        onclick: function () { showDetails(); } }),
       msg].filter(Boolean));
   }
+  // ---------- delivery details + checkout ----------
+  var DSTORE = 'rt-delivery-v1';
+  var FIELDS = [
+    ['name', 'Name', 'text', 'name', true], ['email', 'Email', 'email', 'email', true], ['phone', 'Mobile phone', 'tel', 'tel', true],
+    ['line1', 'Street address', 'text', 'address-line1', true], ['line2', 'Apartment, unit (optional)', 'text', 'address-line2', false],
+    ['city', 'Town', 'text', 'address-level2', true], ['zip', 'Zip code', 'text', 'postal-code', true],
+    ['notes', 'Delivery notes (optional)', 'textarea', 'off', false], ['gift', 'Gift message (optional)', 'textarea', 'off', false]
+  ];
+  var zones = null;
+  function loadZones() {
+    if (zones) return Promise.resolve(zones);
+    return get('delivery_zones?select=zip,town&active=eq.true').then(function (z) { zones = z; return z; }, function () { zones = []; return zones; });
+  }
+  function showDetails() {
+    if (RT.status().state !== 'open' || RT.subtotal() < RT.minCents) return;
+    mode = 'details';
+    dr.querySelector('.rtb-hd h2').textContent = 'Delivery details';
+    var saved = {}; try { saved = JSON.parse(localStorage.getItem(DSTORE) || '{}') || {}; } catch (e) { /* none */ }
+    errEl = el('p', { class: 'rtb-err', role: 'alert' });
+    formEl = el('form', { class: 'rtb-form', novalidate: true, onsubmit: function (e) { e.preventDefault(); submit(); } },
+      FIELDS.map(function (f) {
+        var input = f[2] === 'textarea'
+          ? el('textarea', { name: f[0], rows: '2', maxlength: f[0] === 'notes' ? '500' : '300', placeholder: f[0] === 'notes' ? 'Gate code, side porch, leave with neighbor…' : 'We’ll tuck a card in with your order' })
+          : el('input', { name: f[0], type: f[2], autocomplete: f[3], required: f[4], inputmode: f[0] === 'zip' ? 'numeric' : (f[0] === 'phone' ? 'tel' : null), maxlength: f[0] === 'zip' ? '10' : '200' });
+        input.value = saved[f[0]] || (f[0] === 'city' && !saved.city ? '' : '');
+        input.addEventListener('input', function () { input.removeAttribute('aria-invalid'); persist(); });
+        return el('label', { class: 'rtb-f' + (f[0] === 'line2' ? '' : '') }, el('span', { text: f[1] }), input);
+      }),
+      el('p', { class: 'rtb-small', text: 'We deliver Tuesday, ' + (RT.week && RT.week.delivery_window || '10 am to 4 pm') + '. You don’t need to be home. We’ll text this number on delivery day.' }),
+      el('button', { type: 'submit', hidden: true }));
+    listEl.replaceChildren(formEl);
+    listEl.scrollTop = 0;
+    renderDetailsFooter();
+    loadZones();
+    setTimeout(function () { var first = formEl.querySelector('input:not([value]),input'); var empty = Array.prototype.find.call(formEl.querySelectorAll('input'), function (i) { return !i.value; }); (empty || first).focus(); }, 60);
+  }
+  function persist() {
+    var v = {}; formEl.querySelectorAll('input,textarea').forEach(function (i) { v[i.name] = i.value; });
+    try { localStorage.setItem(DSTORE, JSON.stringify(v)); } catch (e) { /* none */ }
+    return v;
+  }
+  function renderDetailsFooter() {
+    var sub = RT.subtotal();
+    whenEl.textContent = RT.week ? 'For delivery ' + fmtDay(RT.week.delivery_date) + ', ' + (RT.week.delivery_window || '') : '';
+    goBtn = el('button', { type: 'button', class: 'rtb-go', text: 'Continue to payment · ' + money(sub), onclick: function () { submit(); } });
+    ftEl.replaceChildren(
+      el('div', { class: 'rtb-row' }, el('span', { text: RT.count() + (RT.count() === 1 ? ' item' : ' items') }), el('span', { class: 'rtb-sub', text: money(sub) })),
+      el('p', { class: 'rtb-note', text: 'Delivery included. You’ll pay securely on the next page with a card, Apple Pay or Google Pay.' }),
+      errEl || el('span'), goBtn,
+      el('button', { type: 'button', class: 'rtb-back', text: '← Back to basket', onclick: function () { mode = 'basket'; formEl = null; renderDrawer(); } }));
+    if (RT.subtotal() < RT.minCents || RT.status().state !== 'open') { mode = 'basket'; formEl = null; renderDrawer(); }
+  }
+  function fieldError(name, msg) {
+    errEl.textContent = msg;
+    var i = formEl && formEl.querySelector('[name="' + name + '"]');
+    if (i) { i.setAttribute('aria-invalid', 'true'); i.focus(); }
+  }
+  function submit() {
+    var v = persist(); errEl.textContent = '';
+    for (var k = 0; k < FIELDS.length; k++) {
+      var f = FIELDS[k];
+      if (f[4] && !String(v[f[0]] || '').trim()) return fieldError(f[0], 'Please add your ' + f[1].toLowerCase().replace(' (optional)', '') + '.');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) return fieldError('email', 'Please check your email address.');
+    if (String(v.phone).replace(/\D/g, '').length < 10) return fieldError('phone', 'Please add a 10-digit phone number.');
+    var zip5 = String(v.zip).trim().slice(0, 5);
+    if (!/^\d{5}$/.test(zip5)) return fieldError('zip', 'Please check your zip code.');
+    if (zones && zones.length && !zones.some(function (z) { return z.zip === zip5; })) return fieldError('zip', 'Sorry, we don’t deliver to ' + zip5 + ' yet. We deliver within about 15 minutes of Hereford. Email hello@railtrailbakehouse.com if you’re just outside.');
+    goBtn.disabled = true; goBtn.textContent = 'Opening secure checkout…';
+    var items = RT.lines().map(function (l) { return { slug: l.item.slug, qty: l.qty }; });
+    fetch(SUPA_URL.replace('/rest/v1/', '/functions/v1/checkout'), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPA_KEY },
+      body: JSON.stringify({ action: 'start', items: items, delivery: v })
+    }).then(function (r) { return r.json().catch(function () { return { error: 'Checkout could not start. Please try again.' }; }); })
+      .then(function (d) {
+        if (d && d.url) { location.href = d.url; return; }
+        goBtn.disabled = false; goBtn.textContent = 'Continue to payment · ' + money(RT.subtotal());
+        if (d && d.field) fieldError(d.field, d.error); else errEl.textContent = (d && d.error) || 'Checkout could not start. Please try again.';
+      }, function () {
+        goBtn.disabled = false; goBtn.textContent = 'Continue to payment · ' + money(RT.subtotal());
+        errEl.textContent = 'We couldn’t reach checkout. Check your connection and try again.';
+      });
+  }
+  RT.clearBasket = function () { RT.basket = { week_id: RT.week ? RT.week.week_id : null, items: {} }; save(); };
+
   RT.open = function () {
     if (toastEl) { toastEl.remove(); toastEl = null; }
     if (!dr) buildDrawer();
+    mode = 'basket'; formEl = null;
     renderDrawer();
     lastFocus = document.activeElement;
     ov.classList.add('on'); dr.classList.add('on'); document.body.classList.add('rtb-lock');
@@ -335,6 +434,7 @@
 
   RT.onChange(function () { paintCounts(); paintHomeButtons(); renderDrawer(); });
   RT.ready.then(function () { fillHomeMenu(); emit(); });
+  if (/[?&]checkout=cancelled/.test(location.search)) RT.ready.then(function () { toast('Checkout cancelled. Your basket is still here.', true); try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) { /* ignore */ } });
   setInterval(emit, 60000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', paintCounts); else paintCounts();
 })();
