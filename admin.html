@@ -57,7 +57,10 @@ td input,td select{min-width:70px}
 .order:first-child{border-top:none}
 .price-in{max-width:100px}
 @media (max-width:700px){td,th{padding:6px 4px}.hide-sm{display:none}}
-@media (max-width:600px){nav.tabs{display:grid;grid-template-columns:repeat(4,1fr)}nav.tabs button{font-size:14px!important}nav.tabs button{padding:10px 4px;font-size:15px}#whoEmail{display:none}header .brand b{font-size:19px}header{padding-top:12px;padding-bottom:12px}}
+.who .navbtn{display:none;background:none;border:none;padding:0;color:var(--card);width:40px;height:40px;margin-right:-8px;cursor:pointer;align-items:center;justify-content:center}
+.navbtn .x{display:none}body.nav-open .navbtn .x{display:inline}body.nav-open .navbtn .b{display:none}
+@media (max-width:600px){#whoEmail{display:none}header .brand b{font-size:19px}header{padding-top:12px;padding-bottom:12px}.who .navbtn{display:flex}#signOut{display:none}nav.tabs{display:none;flex-direction:column;border-bottom:1px solid var(--line);margin:-6px 0 20px}body.nav-open nav.tabs{display:flex}nav.tabs button{text-align:left;padding:13px 2px;font-size:17px;border-bottom:1px solid var(--soft);border-left:3px solid transparent;padding-left:10px}nav.tabs button[aria-selected=true]{border-bottom-color:var(--soft);border-left-color:var(--green)}nav.tabs .tab-out{display:block;color:var(--red)}}
+.tab-out{display:none}.cur-tab{display:none;font-variant:small-caps;letter-spacing:.1em;color:var(--muted);font-size:15px;margin:-4px 0 12px}
 @media print{
  body{background:#fff}header,nav.tabs,.no-print,.toast{display:none!important}
  main{border-radius:0;padding:0;max-width:none}
@@ -69,7 +72,7 @@ td input,td select{min-width:70px}
 <body>
 <header>
   <div class="brand"><b>Rail Trail Bakehouse</b><span>kitchen</span></div>
-  <div class="who hide" id="who"><span id="whoEmail"></span><button id="signOut" type="button">Sign out</button></div>
+  <div class="who hide" id="who"><span id="whoEmail"></span><button id="signOut" type="button">Sign out</button><button class="navbtn" id="navBtn" type="button" aria-label="Menu" aria-expanded="false"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path class="b" d="M4 8h18M4 13h18M4 18h18"/><path class="x" d="M6 6l14 14M20 6L6 20"/></svg></button></div>
 </header>
 <main id="app"><p class="muted">Loading…</p></main>
 
@@ -181,6 +184,8 @@ td input,td select{min-width:70px}
       });
     });
   }
+  function setNav(on) { document.body.classList.toggle('nav-open', on); document.getElementById('navBtn').setAttribute('aria-expanded', on ? 'true' : 'false'); }
+  document.getElementById('navBtn').addEventListener('click', function () { setNav(!document.body.classList.contains('nav-open')); });
   document.getElementById('signOut').addEventListener('click', function () { sb.auth.signOut().then(function () { renderSignIn(); }); });
 
   // ---------- data ----------
@@ -203,11 +208,12 @@ td input,td select{min-width:70px}
   // ---------- layout ----------
   var TABS = [['week', 'Weekly menu'], ['orders', 'Orders'], ['bake', 'Bake sheet'], ['delivery', 'Delivery sheet'], ['products', 'Products'], ['team', 'Team'], ['settings', 'Settings']];
   function render() {
-    var tabs = h('nav', { class: 'tabs', role: 'tablist' }, TABS.map(function (t) {
-      return h('button', { type: 'button', role: 'tab', 'aria-selected': state.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { state.tab = t[0]; render(); } });
-    }));
+    var tabs = h('nav', { class: 'tabs', id: 'tabs', role: 'tablist' }, TABS.map(function (t) {
+      return h('button', { type: 'button', role: 'tab', 'aria-selected': state.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { state.tab = t[0]; setNav(false); render(); window.scrollTo(0, 0); } });
+    }).concat([h('button', { type: 'button', class: 'tab-out', text: 'Sign out', onclick: function () { setNav(false); document.getElementById('signOut').click(); } })]));
+    var cur = TABS.find(function (t) { return t[0] === state.tab; });
     var body = h('div');
-    app.replaceChildren(tabs, body);
+    app.replaceChildren(tabs, h('div', { class: 'cur-tab', text: cur ? cur[1] : '' }), body);
     var fn = { week: viewWeek, orders: viewOrders, bake: viewBake, delivery: viewDelivery, products: viewProducts, team: viewTeam, settings: viewSettings }[state.tab];
     fn(body);
   }
